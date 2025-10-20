@@ -18,6 +18,7 @@ dependencies = [
 
 [project.scripts]
 privacy_eraser = "privacy_eraser.__main__:main"
+privacy_eraser_poc = "privacy_eraser.poc.main:main"
 
 [build-system]
 requires = ["hatchling>=1.24"]
