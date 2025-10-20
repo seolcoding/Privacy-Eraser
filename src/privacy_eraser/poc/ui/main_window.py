@@ -18,6 +18,42 @@ from privacy_eraser.poc.core.data_config import (
 )
 
 
+class BrowserDetectionThread(QThread):
+    """브라우저 감지 스레드"""
+
+    browsers_detected = Signal(list)  # List[BrowserInfo]
+
+    def run(self):
+        """브라우저 감지 실행"""
+        try:
+            from privacy_eraser.detect_windows import detect_browsers
+            from privacy_eraser.poc.core.data_config import (
+                get_browser_icon, get_browser_color
+            )
+
+            detected = detect_browsers()
+            browsers = []
+
+            for browser in detected:
+                browser_name = browser.get("name", "Unknown").lower()
+                icon = get_browser_icon(browser_name)
+                color = get_browser_color(browser_name)
+
+                browser_info = BrowserInfo(
+                    name=browser.get("name", "Unknown"),
+                    icon=icon,
+                    color=color,
+                    installed=browser.get("present") == "yes"
+                )
+                browsers.append(browser_info)
+
+            self.browsers_detected.emit(browsers)
+
+        except Exception as e:
+            logger.error(f"브라우저 감지 실패: {e}")
+            self.browsers_detected.emit([])
+
+
 class MainWindow(QMainWindow):
     """POC 메인 윈도우
 
@@ -26,8 +62,12 @@ class MainWindow(QMainWindow):
     - 메인 삭제 버튼
     """
 
-    def __init__(self):
-        """메인 윈도우 초기화"""
+    def __init__(self, auto_detect: bool = True):
+        """메인 윈도우 초기화
+
+        Args:
+            auto_detect: 자동 브라우저 감지 여부 (테스트에서는 False)
+        """
         super().__init__()
         self.setWindowTitle("Privacy Eraser POC")
         self.setFixedSize(Sizes.MAIN_WINDOW_WIDTH, Sizes.MAIN_WINDOW_HEIGHT)
@@ -47,7 +87,8 @@ class MainWindow(QMainWindow):
         self.apply_styles()
 
         # 브라우저 감지 시작 (별도 스레드)
-        self.detect_browsers_async()
+        if auto_detect:
+            self.detect_browsers_async()
 
     def setup_ui(self) -> None:
         """UI 구성"""
@@ -133,41 +174,10 @@ class MainWindow(QMainWindow):
 
     def detect_browsers_async(self) -> None:
         """비동기로 브라우저 감지"""
-        # 별도 스레드에서 감지 (UI 블로킹 방지)
-        def detect():
-            try:
-                from privacy_eraser.detect_windows import detect_browsers
-                from privacy_eraser.poc.core.data_config import (
-                    get_browser_icon, get_browser_color
-                )
-
-                detected = detect_browsers()
-                browsers = []
-
-                for browser in detected:
-                    browser_name = browser.get("name", "Unknown").lower()
-                    icon = get_browser_icon(browser_name)
-                    color = get_browser_color(browser_name)
-
-                    browser_info = BrowserInfo(
-                        name=browser.get("name", "Unknown"),
-                        icon=icon,
-                        color=color,
-                        installed=browser.get("present") == "yes"
-                    )
-                    browsers.append(browser_info)
-
-                # UI 스레드에서 업데이트
-                self.on_browsers_detected(browsers)
-
-            except Exception as e:
-                logger.error(f"브라우저 감지 실패: {e}")
-                self.on_browsers_detected([])
-
-        # 스레드 시작
-        thread = QThread()
-        thread.run = detect
-        thread.start()
+        # 감지 스레드 생성 및 시작
+        self.detection_thread = BrowserDetectionThread()
+        self.detection_thread.browsers_detected.connect(self.on_browsers_detected)
+        self.detection_thread.start()
 
     def on_browsers_detected(self, browsers: list[BrowserInfo]) -> None:
         """브라우저 감지 완료 시"""
@@ -225,51 +235,25 @@ class MainWindow(QMainWindow):
 
     def simulate_cleaning(self, selected_browsers: list[str]) -> None:
         """삭제 시뮬레이션 (테스트용)"""
-        import time
-        import random
-        from privacy_eraser.poc.core.browser_info import CleaningStats
+        # 실제 CleanerWorker 사용 (또는 시뮬레이션 워커)
+        from privacy_eraser.poc.core.poc_cleaner import CleanerWorker
 
-        def clean():
-            try:
-                # 모의 파일 목록 생성
-                sample_paths = [
-                    "C:\\Users\\User\\AppData\\Local\\Google\\Chrome\\User Data\\Default\\Cache\\",
-                    "C:\\Users\\User\\AppData\\Local\\Google\\Chrome\\User Data\\Default\\Cookies",
-                    "C:\\Users\\User\\AppData\\Local\\Mozilla\\Firefox\\Profiles\\random.default-release\\cache2\\",
-                    "C:\\Users\\User\\AppData\\Local\\Microsoft\\Edge\\User Data\\Default\\Session Storage\\",
-                ]
+        # 워커 스레드 생성
+        self.cleaner_worker = CleanerWorker(
+            browsers=selected_browsers,
+            delete_bookmarks=self.delete_bookmarks
+        )
 
-                total_files = random.randint(100, 500)
-                total_size = random.randint(50 * 1024 * 1024, 200 * 1024 * 1024)
+        # 시그널 연결
+        self.cleaner_worker.progress_updated.connect(
+            lambda path, size: self.progress_dialog.update_progress(path, size)
+        )
+        self.cleaner_worker.cleaning_finished.connect(
+            lambda stats: self.progress_dialog.show_completion(stats)
+        )
+        self.cleaner_worker.error_occurred.connect(
+            lambda error: self.progress_dialog.show_error(error)
+        )
 
-                self.progress_dialog.set_total_files(total_files)
-                self.progress_dialog.set_total_size(total_size)
-
-                # 파일 삭제 시뮬레이션
-                for i in range(total_files):
-                    file_path = random.choice(sample_paths) + f"file_{i:06d}"
-                    file_size = random.randint(1024, 10 * 1024 * 1024)
-
-                    self.progress_dialog.update_progress(file_path, file_size)
-                    time.sleep(0.01)  # 시각적 효과
-
-                # 완료
-                stats = CleaningStats(
-                    total_files=total_files,
-                    deleted_files=total_files,
-                    failed_files=0,
-                    total_size=total_size,
-                    deleted_size=total_size,
-                    duration=time.time() - time.time(),
-                    errors=[]
-                )
-                self.progress_dialog.show_completion(stats)
-
-            except Exception as e:
-                logger.error(f"삭제 실패: {e}")
-                self.progress_dialog.show_error(str(e))
-
-        # 별도 스레드에서 실행
-        thread = QThread()
-        thread.run = clean
-        thread.start()
+        # 워커 시작
+        self.cleaner_worker.start()
