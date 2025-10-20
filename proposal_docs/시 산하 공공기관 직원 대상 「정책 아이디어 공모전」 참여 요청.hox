@@ -1,0 +1,290 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hox type="draft" local="false" version="2.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://www.handysoft.com/xsd/2002/04/HOX/1.0">
+<docInfo modification="no">
+<apprID>JHOMS252726619481000</apprID>
+<orgApprID>JHOMS252686614287000</orgApprID>
+<orgDraftDept>
+<ID>000010001</ID>
+<name>기획예산실</name></orgDraftDept>
+<rejectedApprID>00000000000000000000</rejectedApprID>
+<sendID>JHOMS252692533196099</sendID>
+<title>시 산하 공공기관 직원 대상 「정책 아이디어 공모전」 참여 요청</title>
+<enforceType>enforcetype_external</enforceType>
+<keepPeriod>0</keepPeriod>
+<enforceKeepPeriod>0</enforceKeepPeriod>
+<enforceDate>2025-09-26T09:06:15</enforceDate>
+<securityLevel>99</securityLevel>
+<attachSecurityLevel>99</attachSecurityLevel>
+<rankID>0</rankID>
+<publication type="pubtype_open">
+<specialDoc></specialDoc>
+<publicationFlag></publicationFlag>
+<publicRestric></publicRestric>
+<publicRestricReason></publicRestricReason>
+<openStartDate>1970-01-01T09:00:00</openStartDate>
+<listPublicationFlag></listPublicationFlag>
+<listPublicRestricReason></listPublicRestricReason></publication>
+<viewRange>dept</viewRange>
+<viewRestriction>none</viewRestriction>
+<securityExpireDate>1970-01-01T09:00:00</securityExpireDate>
+<audit>
+<type></type>
+<number>0</number></audit>
+<deliberation>
+<type></type>
+<number>0</number></deliberation>
+<drafter>
+<position>직원</position>
+<ID>001020601</ID>
+<name>강기복</name>
+<department>
+<ID>000010163</ID>
+<name>제3운영사업소</name></department>
+<userDept>
+<ID>000010165</ID>
+<name>지원</name></userDept></drafter>
+<editor>
+<position>직원</position>
+<ID>001020601</ID>
+<name>강기복</name>
+<department>
+<ID>000010163</ID>
+<name>제3운영사업소</name></department></editor>
+<saveDeptID>000010163</saveDeptID>
+<folderInfo>
+<ID>JHOMS140010000103708</ID>
+<name>서무일반/서무일반</name></folderInfo>
+<draftDate>2025-09-29T17:35:50</draftDate>
+<approvalDate>2025-09-29T17:35:50</approvalDate>
+<approvalType>apprtype_receipt</approvalType>
+<approvalFlag> apprflag_attach apprflag_open_body apprflag_open_list apprflag_private_mobile</approvalFlag>
+<approvalStatus>apprstatus_finish</approvalStatus>
+<pageCnt>2</pageCnt>
+<bodySize>1241005</bodySize>
+<sancAttachCapacity>0</sancAttachCapacity>
+<preview>
+<type>text</type>
+<data>부산광역시 공공기관담당관-8991(2025.9.19.)호와 관련, 시 산하 공공기관 직원 대상 「市 발전 정책 아이디어 공모전」 개최를 아래와 같이 알려드리니 전 부서장께서는 소속 직원이 적극참여할 수 있도록 격려·공유해 주시기 바랍니다.
+
+1. 공모전 개요
+
+
+2. 참여 방법 및 평가 반영(참여 가점 등)
+
+3. 참고 사이트(정책 우수사례 등)
+
+
+
+붙임  1. 관련문서 1부.
+      2. 공공기관 직원 아이디어 공모전 공고문 1부.
+      3. 제출서류(공모참가신청서, 공모제안서) 1부.  끝.</data></preview>
+<docNumber>
+<displayDocNumber>기획예산실-9627</displayDocNumber>
+<docRegSequence>9627</docRegSequence>
+<regNumber>1101000009627</regNumber>
+<expression format="@D-@N">
+<param name="@N">
+9627</param>
+<param name="@D">
+기획예산실</param></expression>
+<classCode></classCode>
+<classCodeDescription></classCodeDescription></docNumber>
+<formInfo>
+<formVersion>49</formVersion>
+<formID>JHOMS142870000102000</formID>
+<formName>일반기안문</formName>
+<ownerDeptID>000010241</ownerDeptID>
+<wordType>hwp2002</wordType>
+<formType>formtype_uniform</formType>
+<templateFlag>tmplflag_normal tmplflag_checkformver tmplflag_verity tmplflag_draftdocnum tmplflag_receiptdocnum</templateFlag>
+<defaultAction> defaultaction_setupflow defaultaction_viewcomment defaultaction_addcomment defaultaction_delcomment defaultaction_havecomment defaultaction_addattach defaultaction_delattach defaultaction_viewattach defaultaction_delmemo</defaultAction>
+<classID>JHOMS142600000001000</classID>
+<displayFlag>49</displayFlag>
+<linkageSystemType></linkageSystemType></formInfo>
+<exchangeInfo/>
+<objectIDList>
+<objectID dirty="" type="objectidtype_attach">
+<ID>JHOMS252686614287100</ID>
+<name>1. 관련문서.zip</name>
+<src></src>
+<attachType>attachtype_normal</attachType>
+<size>227451</size>
+<restriction remove="true" modify="true" move="true" save="true" hidden="false" view="true" linkage="false"/>
+<linkID>00000000000000000000</linkID>
+<contentNumber>0</contentNumber>
+<participantID>00000000000000000000</participantID>
+<objectFlag></objectFlag></objectID>
+<objectID dirty="" type="objectidtype_attach">
+<ID>JHOMS252686614287101</ID>
+<name>2. 공공기관 직원 아이디어 공모전 공고문.hwp</name>
+<src></src>
+<attachType>attachtype_normal</attachType>
+<size>50688</size>
+<restriction remove="true" modify="true" move="true" save="true" hidden="false" view="true" linkage="false"/>
+<linkID>00000000000000000000</linkID>
+<contentNumber>0</contentNumber>
+<participantID>00000000000000000000</participantID>
+<objectFlag></objectFlag></objectID>
+<objectID dirty="" type="objectidtype_attach">
+<ID>JHOMS252686614287102</ID>
+<name>3. 작성서식(공공기관직원 대상 정책아이디어 공모).hwp</name>
+<src></src>
+<attachType>attachtype_normal</attachType>
+<size>13312</size>
+<restriction remove="true" modify="true" move="true" save="true" hidden="false" view="true" linkage="false"/>
+<linkID>00000000000000000000</linkID>
+<contentNumber>0</contentNumber>
+<participantID>00000000000000000000</participantID>
+<objectFlag></objectFlag></objectID></objectIDList>
+<content>
+<title>시 산하 공공기관 직원 대상 「정책 아이디어 공모전」 참여 요청</title>
+<receiptInfo>
+<recipient/>
+<displayString></displayString>
+<displayRefString></displayRefString>
+<senderName></senderName>
+<senderID>00000000000000000000</senderID>
+<senderDeptID>00000000000000000000</senderDeptID>
+<sendOrgName></sendOrgName></receiptInfo>
+<enforceType>enforcetype_external</enforceType>
+<enforceMethod>enforcemethod_direct</enforceMethod>
+<attachInfo>
+<attach>
+<ID>JHOMS252686614287100</ID>
+<ID>JHOMS252686614287101</ID>
+<ID>JHOMS252686614287102</ID></attach></attachInfo>
+<pageCnt>2</pageCnt>
+<stampName>부산교통공사인</stampName></content>
+<linkDocList dirty=""/>
+<returnInfo/>
+<hooyulMethod></hooyulMethod>
+<sendMethod>auto</sendMethod>
+<classification></classification>
+<personalInfoCount>0</personalInfoCount></docInfo>
+<approvalFlow modification="no">
+<participant current="false" IPAddress="10.30.15.94" absent="false" opinion="false" signStyle="image">
+<participantID>JHOMS252724204989000</participantID>
+<position>직원</position>
+<dutyName>담당자</dutyName>
+<rankName>7급</rankName>
+<ID>001020601</ID>
+<name>강기복</name>
+<type>user</type>
+<department>
+<ID>000010165</ID>
+<name>지원</name></department>
+<signerLevel>54</signerLevel>
+<date>2025-09-29T17:35:50</date>
+<signMethod></signMethod>
+<approvalType>user_nosign</approvalType>
+<approvalSubType></approvalSubType>
+<displayApprovalType>업무담당자</displayApprovalType>
+<approvalStatus>partapprstatus_done</approvalStatus>
+<validStatus>valid</validStatus>
+<grantedAction> defaultaction_setupflow defaultaction_viewcomment defaultaction_addcomment defaultaction_delcomment defaultaction_havecomment defaultaction_viewattach defaultaction_delmemo</grantedAction>
+<dutyType> partdtype_charge</dutyType>
+<participantFlag></participantFlag>
+<mappingCell>
+<cellGroupID>0</cellGroupID>
+<cellName></cellName>
+<cellName_Log></cellName_Log>
+<cellFormat>0</cellFormat></mappingCell>
+<backup>
+<approvalType></approvalType>
+<approvalSubType></approvalSubType>
+<auditType></auditType>
+<complianceType></complianceType>
+<date>1970-01-01T09:00:00</date></backup>
+<bodyFileVersion>
+<major>1</major>
+<minor>0</minor></bodyFileVersion></participant></approvalFlow>
+<examRequest>
+<requester>
+<ID>00000000000000000000</ID>
+<name></name>
+<department>
+<ID>00000000000000000000</ID>
+<name></name></department></requester>
+<conversionDate>2025-09-29T17:35:50</conversionDate>
+<requestDate>2025-09-29T17:35:50</requestDate>
+<exam>
+<examStatus>apprstatus_ing</examStatus>
+<examID>00000000000000000000</examID></exam></examRequest>
+<previewInfo reverseFlow="false" depth="1">
+<managePart>000010163</managePart>
+<receipt>
+<date>2025-09-29T17:35:26</date>
+<docNumber>
+<displayDocNumber>제3운영사업소-4461</displayDocNumber>
+<docRegSequence>4461</docRegSequence>
+<regNumber>2130000004461</regNumber>
+<expression format="@D-@N">
+<param name="@N">
+4461</param>
+<param name="@D">
+제3운영사업소</param></expression>
+<classCode></classCode>
+<classCodeDescription></classCodeDescription></docNumber></receipt></previewInfo>
+<sharedInfo modification="no">
+<date>1970-01-01T09:00:00</date>
+<flag>shareflag_yes</flag></sharedInfo>
+<clientInfo>
+<cellInfo>
+<cell type="celltype_normal" width="1000" height="300">
+<cellName>서명.4</cellName>
+<cellFormat>fmt_normal</cellFormat>
+<signCell>
+<title first="false" align="center" valign="bottom" kind="fmt_normal">
+</title>
+<WMF width="0" height="0" size="0" align="center" valign="top" signText=""/></signCell></cell>
+<cell type="celltype_normal" width="551" height="157">
+<cellName>서명.3</cellName>
+<cellFormat>fmt_normal</cellFormat>
+<signCell>
+<title first="false" align="center" valign="bottom" kind="fmt_normal">
+</title>
+<addText align="left" valign="top">
+@A전결@D09/26</addText>
+<WMF width="551" height="157" size="238" align="center" valign="middle" signText="">
+AQAJAAADdwAAAAIAHAAAAAAABQAAAAsCAAAAAAUAAAAMAp0AJwIcAAAA+wKKAAAAAAAAALwCAAAA
+gQQAAACxvLiyABAKKQAACgAAICoB/v///yDS+QC+IH92QAAAAAQAAAAtAQAABQAAAAIBAQAAAAUA
+AAAJAgAAAAAJAAAAIQUGALHox/a/7AkAQAAFAAAACQIBAAAABQAAAAIBAQAAABwAAAD7AhAABwAA
+AAAAvAIAAAAAAQICIlN5c3RlbQAAIgCKAAAACgDHD2ZPxw9mTyIAigAg0vkABAAAAC0BAQAEAAAA
+8AEAAAMAAAAAAA==</WMF></signCell></cell>
+<cell type="celltype_normal" width="551" height="157">
+<cellName>서명.2</cellName>
+<cellFormat>fmt_normal</cellFormat>
+<signCell>
+<title first="false" align="center" valign="bottom" kind="fmt_normal">
+</title>
+<WMF width="551" height="157" size="238" align="center" valign="middle" signText="">
+AQAJAAADdwAAAAIAHAAAAAAABQAAAAsCAAAAAAUAAAAMAp0AJwIcAAAA+wKKAAAAAAAAALwCAAAA
+gQQAAACxvLiyABoKDAAACgBIT3oA/v///5jTHQCfIPt2QAAAAAQAAAAtAQAABQAAAAIBAQAAAAUA
+AAAJAgAAAAAJAAAAIQUGALHowLHIowkAQAAFAAAACQIBAAAABQAAAAIBAQAAABwAAAD7AhAABwAA
+AAAAvAIAAAAAAQICIlN5c3RlbQAAIgCKAAAACgD9E2Yu/RNmLiIAigCY0x0ABAAAAC0BAQAEAAAA
+8AEAAAMAAAAAAA==</WMF></signCell></cell>
+<cell type="celltype_normal" width="551" height="157">
+<cellName>서명.1</cellName>
+<cellFormat>fmt_normal</cellFormat>
+<signCell>
+<title first="false" align="center" valign="bottom" kind="fmt_normal">
+</title>
+<WMF width="551" height="157" size="238" align="center" valign="middle" signText="">
+AQAJAAADdwAAAAIAHAAAAAAABQAAAAsCAAAAAAUAAAAMAp0AJwIcAAAA+wKKAAAAAAAAALwCAAAA
+gQQAAACxvLiyABsKCwAACgAQdWEQ/v///5DULwF8QwJ2QAAAAAQAAAAtAQAABQAAAAIBAQAAAAUA
+AAAJAgAAAAAJAAAAIQUGAMDMwda/tQkAQAAFAAAACQIBAAAABQAAAAIBAQAAABwAAAD7AhAABwAA
+AAAAvAIAAAAAAQICIlN5c3RlbQAAIgCKAAAACgC8GmaxvBpmsSIAigCQ1C8BBAAAAC0BAQAEAAAA
+8AEAAAMAAAAAAA==</WMF></signCell></cell>
+<cell type="celltype_agree" width="551" height="157">
+<cellName>협조.3</cellName>
+<cellFormat>fmt_normal</cellFormat></cell>
+<cell type="celltype_agree" width="551" height="157">
+<cellName>협조.2</cellName>
+<cellFormat>fmt_normal</cellFormat></cell>
+<cell type="celltype_agree" width="551" height="157">
+<cellName>협조.1</cellName>
+<cellFormat>fmt_normal</cellFormat>
+<signCell>
+<title first="true" align="center" valign="middle" kind="fmt_normal">
+</title>
+<WMF width="0" height="0" size="0" align="center" valign="top" signText=""/></signCell></cell></cellInfo></clientInfo></hox>

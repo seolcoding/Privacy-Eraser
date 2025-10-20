@@ -1,0 +1,74 @@
+# Cursor Rules for PrivacyEraser
+
+## Python Project Management
+- This project uses **uv** for all Python operations (NOT pip, poetry, or conda)
+- Always use uv commands:
+  - `uv venv` - create virtual environment
+  - `uv sync` - install dependencies from pyproject.toml
+  - `uv sync --extra test` - install with test dependencies
+  - `uv run privacy_eraser` - run the application
+  - `uv run -m pytest` - run tests
+  - `uv add <package>` - add new dependency
+
+## Development Workflow
+1. Before any code changes, ensure dependencies are synced: `uv sync`
+2. Run tests before committing: `uv run -m pytest -q`
+3. Check coverage periodically: `uv run -m pytest --cov=privacy_eraser --cov-report=term-missing`
+
+## Platform Considerations
+- Primary target: Windows 10/11
+- Windows-only modules (detect_windows.py) should be guarded with `if os.name == "nt"`
+- Tests for Windows-only features use `@pytest.mark.skipif(os.name != "nt", reason="Windows-only")`
+- Cross-platform code should work on Linux/macOS where applicable
+
+## Code Style
+- Python 3.12+ syntax (use `from __future__ import annotations` for type hints)
+- Type hints required for all public functions
+- Use `loguru` for logging (NOT stdlib logging directly)
+- Use `rich` for terminal output formatting
+- Imports: organize as stdlib, third-party, local (separated by blank lines)
+
+## GUI Development
+- Framework: CustomTkinter with tkinter fallback
+- Always wrap customtkinter imports in try/except for graceful degradation
+- Test GUI changes manually on Windows (automated GUI tests are minimal)
+
+## Testing
+- All tests run in isolated sandbox (`sandbox` fixture from conftest.py)
+- NEVER access real user directories or modify real browser data in tests
+- Use monkeypatch for environment variables
+- File operations must use tmp_path/sandbox fixtures
+- Cleanup is automatic via pytest fixtures
+
+## Commit Guidelines
+- Write clear, descriptive commit messages
+- Prefix commits: feat:, fix:, docs:, test:, refactor:, chore:
+- Test before committing
+- Do NOT commit:
+  - __pycache__ directories
+  - .pyc files
+  - Virtual environments
+  - IDE-specific files (except .cursor/)
+  - Test artifacts
+
+## Module Organization
+- `src/privacy_eraser/` - main package
+  - `__main__.py` - entry point
+  - `gui.py` - GUI application
+  - `cleaning.py` - deletion engine
+  - `cleanerml_loader.py` - CleanerML XML parser
+  - `detect_windows.py` - Windows program detection
+  - `diagnostics.py` - startup diagnostics
+- `tests/` - test suite
+- `bleachbit/cleaners/` - CleanerML definitions (upstream)
+
+## Documentation
+- Keep readme.md concise and accurate
+- Detailed docs go in docs/ directory
+- Update ROADMAP.md when priorities change
+- Mark features as "Implemented" or "Planned" clearly
+
+## External Dependencies
+- BleachBit cleaners XML files are referenced but not modified
+- CleanerML is a well-known format; maintain compatibility
+

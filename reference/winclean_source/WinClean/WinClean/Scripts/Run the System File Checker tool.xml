@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Script>
+  <Name>Run the System File Checker tool</Name>
+  <Name xml:lang="fr">Exécuter l'utilitaire de contrôle de l'intégrité système (SFC)</Name>
+  <Description>The System File Checker tool (SFC) is a Microsoft utility that checks the integrity of critical system files and repaires them.</Description>
+  <Description xml:lang="fr">L'utilitaire de contrôle de l'intégrité système est fourni par Microsoft. Il vérifie et répare les fichiers systèmes critiques.</Description>
+  <Category>Maintenance</Category>
+  <SafetyLevel>Safe</SafetyLevel>
+  <Impact>Stability</Impact>
+  <Versions>>=5.1.2600</Versions>
+  <Code>
+    <Execute Host="Execute">sfc /scannow</Execute>
+  </Code>
+</Script>

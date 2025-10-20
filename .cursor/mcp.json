@@ -1,0 +1,28 @@
+{
+    "mcpServers": {
+        "filesystem": {
+            "command": "npx",
+            "args": [
+                "-y",
+                "@modelcontextprotocol/server-filesystem"
+            ]
+        },
+        "fetch": {
+            "command": "npx",
+            "args": [
+                "-y",
+                "@modelcontextprotocol/server-fetch"
+            ]
+        },
+        "shell": {
+            "command": "npx",
+            "args": [
+                "-y",
+                "@modelcontextprotocol/server-shell"
+            ],
+            "env": {
+                "ALLOW_COMMANDS": "uv,python,git,pyinstaller,tasklist,taskkill,schtasks,powershell"
+            }
+        }
+    }
+}
