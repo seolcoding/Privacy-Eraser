@@ -36,6 +36,9 @@ test = [
     "pytest-mock>=3.14.0",
     "pytest-qt>=4.5.0",
 ]
+build = [
+    "pyinstaller>=6.0.0",
+]
 
 [tool.pytest.ini_options]
 addopts = "-q -ra"
