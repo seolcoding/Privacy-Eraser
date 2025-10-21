@@ -8,6 +8,8 @@ from PySide6.QtCore import Qt, Signal, QThread, QTimer
 from PySide6.QtGui import QFont
 
 from loguru import logger
+from pathlib import Path
+from datetime import datetime
 
 from privacy_eraser.poc.ui.styles import Colors, Spacing, Sizes, Typography, get_stylesheet
 from privacy_eraser.poc.ui.browser_card import BrowserCard
@@ -200,6 +202,43 @@ class MainWindow(QMainWindow):
     def apply_styles(self) -> None:
         """스타일 적용"""
         self.setStyleSheet(get_stylesheet())
+
+    def showEvent(self, event) -> None:
+        """윈도우 표시 이벤트 (스크린샷 캡처용)"""
+        super().showEvent(event)
+
+        # 윈도우가 완전히 렌더링된 후 스크린샷 캡처 (1초 후)
+        QTimer.singleShot(1000, self.take_screenshot)
+
+    def take_screenshot(self) -> None:
+        """GUI 스크린샷 저장
+
+        screenshots/ 디렉토리에 타임스탬프 파일명으로 저장
+        latest.png 링크도 업데이트
+        """
+        try:
+            # 스크린샷 디렉토리 생성
+            screenshots_dir = Path("screenshots")
+            screenshots_dir.mkdir(exist_ok=True)
+
+            # 타임스탬프 파일명
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = screenshots_dir / f"poc_gui_{timestamp}.png"
+
+            # 스크린샷 캡처
+            pixmap = self.grab()
+            pixmap.save(str(filename))
+
+            logger.info(f"스크린샷 저장: {filename}")
+
+            # latest.png 링크 업데이트 (Windows에서는 복사)
+            latest_path = screenshots_dir / "latest.png"
+            pixmap.save(str(latest_path))
+
+            logger.info(f"최신 스크린샷: {latest_path}")
+
+        except Exception as e:
+            logger.error(f"스크린샷 캡처 실패: {e}")
 
     def detect_browsers_async(self) -> None:
         """비동기로 브라우저 감지"""

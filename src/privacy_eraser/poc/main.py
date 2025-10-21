@@ -24,9 +24,8 @@ def setup_logger() -> None:
     logger.add(
         sys.stderr,
         format="<level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>",
-        level="INFO",
-        encoding="utf-8",  # UTF-8 인코딩 명시
-        errors="replace"  # 인코딩 에러 시 대체 문자 사용
+        level="INFO"
+        # Note: loguru automatically uses sys.stderr's encoding (already configured as UTF-8 above)
     )
 
 
