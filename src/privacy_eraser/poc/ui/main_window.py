@@ -164,13 +164,36 @@ class MainWindow(QMainWindow):
         # 중간 스페이서
         footer_layout.addStretch()
 
-        # 우측: 삭제 버튼
+        # 우측: 버튼 영역
+        right_buttons = QHBoxLayout()
+        right_buttons.setSpacing(Spacing.MD)
+
+        # 실행 취소 버튼
+        self.undo_button = QPushButton("↩️  실행 취소")
+        self.undo_button.setMinimumWidth(140)
+        self.undo_button.setMinimumHeight(Sizes.BUTTON_HEIGHT)
+        self.undo_button.setFont(QFont(Typography.FONT_FAMILY, Typography.SIZE_BODY, Typography.WEIGHT_MEDIUM))
+        self.undo_button.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {Colors.SECONDARY};
+                color: white;
+            }}
+            QPushButton:hover {{
+                background-color: {Colors.SECONDARY_DARK};
+            }}
+        """)
+        self.undo_button.clicked.connect(self.on_undo_clicked)
+        right_buttons.addWidget(self.undo_button)
+
+        # 삭제 버튼
         self.clean_button = QPushButton("🗑️  개인정보 지우기")
         self.clean_button.setMinimumWidth(200)
         self.clean_button.setMinimumHeight(Sizes.BUTTON_HEIGHT)
         self.clean_button.setFont(QFont(Typography.FONT_FAMILY, Typography.SIZE_BODY, Typography.WEIGHT_MEDIUM))
         self.clean_button.clicked.connect(self.on_clean_clicked)
-        footer_layout.addWidget(self.clean_button, alignment=Qt.AlignRight | Qt.AlignVCenter)
+        right_buttons.addWidget(self.clean_button)
+
+        footer_layout.addLayout(right_buttons, alignment=Qt.AlignRight | Qt.AlignVCenter)
 
         main_layout.addLayout(footer_layout)
 
@@ -219,6 +242,13 @@ class MainWindow(QMainWindow):
         """다운로드 파일 토글"""
         self.delete_downloads = self.downloads_checkbox.isChecked()
         logger.info(f"다운로드 파일 삭제: {self.delete_downloads}")
+
+    def on_undo_clicked(self) -> None:
+        """실행 취소 버튼 클릭"""
+        from privacy_eraser.poc.ui.undo_dialog import UndoDialog
+
+        dialog = UndoDialog(self)
+        dialog.exec()
 
     def on_clean_clicked(self) -> None:
         """삭제 버튼 클릭"""

@@ -12,6 +12,7 @@ from privacy_eraser.poc.core.browser_info import CleaningStats
 from privacy_eraser.poc.core.data_config import (
     get_browser_xml_path, get_cleaner_options, DEFAULT_CLEANER_OPTIONS, BOOKMARK_OPTIONS
 )
+from privacy_eraser.poc.core.backup_manager import BackupManager
 
 
 class CleanerWorker(QThread):
@@ -23,19 +24,22 @@ class CleanerWorker(QThread):
     cleaning_finished = Signal(CleaningStats)  # 작업 완료
     error_occurred = Signal(str)  # 에러 발생
 
-    def __init__(self, browsers: list[str], delete_bookmarks: bool = False, delete_downloads: bool = False, parent=None):
+    def __init__(self, browsers: list[str], delete_bookmarks: bool = False, delete_downloads: bool = False, enable_backup: bool = True, parent=None):
         """
         Args:
             browsers: 선택된 브라우저 목록
             delete_bookmarks: 북마크 삭제 여부
             delete_downloads: 다운로드 파일 삭제 여부
+            enable_backup: 백업 생성 여부 (기본 True)
             parent: 부모 위젯
         """
         super().__init__(parent)
         self.browsers = browsers
         self.delete_bookmarks = delete_bookmarks
         self.delete_downloads = delete_downloads
+        self.enable_backup = enable_backup
         self.is_cancelled = False
+        self.backup_manager = BackupManager()
 
     def run(self) -> None:
         """메인 삭제 로직 (별도 스레드에서 실행)"""
@@ -63,7 +67,30 @@ class CleanerWorker(QThread):
 
             logger.info(f"삭제 대상: {stats.total_files} 파일, {stats.total_size / (1024*1024):.1f} MB")
 
-            # 2. 파일 삭제
+            # 2. 백업 생성 (선택적)
+            if self.enable_backup and all_files:
+                logger.info("백업 생성 중...")
+                existing_files = [Path(f) for f in all_files if os.path.exists(f)]
+
+                if existing_files:
+                    backup_dir = self.backup_manager.create_backup(
+                        files_to_backup=existing_files,
+                        browsers=self.browsers,
+                        delete_bookmarks=self.delete_bookmarks,
+                        delete_downloads=self.delete_downloads,
+                    )
+
+                    if backup_dir:
+                        logger.info(f"백업 생성 완료: {backup_dir}")
+                    else:
+                        logger.warning("백업 생성 실패 (계속 진행)")
+
+                # 오래된 백업 자동 정리
+                deleted = self.backup_manager.cleanup_old_backups()
+                if deleted > 0:
+                    logger.info(f"{deleted}개 오래된 백업 정리됨")
+
+            # 3. 파일 삭제
             for file_path in all_files:
                 if self.is_cancelled:
                     logger.info("삭제 작업 취소됨")
