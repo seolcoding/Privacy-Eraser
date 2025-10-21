@@ -93,7 +93,7 @@ if %errorlevel% neq 0 (
 )
 
 REM Verify executable exists
-if not exist "build\windows\PrivacyEraser.exe" (
+if not exist "build\windows\privacy_eraser.exe" (
     echo [ERROR] Executable is missing!
     pause
     exit /b 1
@@ -176,7 +176,7 @@ Features:^
 
 REM Create release with gh CLI
 gh release create "v%VERSION%" ^
-    "build\windows\PrivacyEraser.exe" ^
+    "build\windows\privacy_eraser.exe" ^
     --title "Privacy Eraser v%VERSION%" ^
     --notes "%RELEASE_NOTES%"
 
@@ -198,7 +198,7 @@ echo ============================================================
 echo.
 echo Version: %VERSION%
 echo Tag: v%VERSION%
-echo Executable: build\windows\PrivacyEraser.exe
+echo Executable: build\windows\privacy_eraser.exe
 echo.
 echo GitHub Release: https://github.com/yourusername/Privacy-Eraser/releases/tag/v%VERSION%
 echo.

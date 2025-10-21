@@ -64,17 +64,17 @@ REM Check if executable was created
 echo.
 echo [3/3] Verifying build...
 
-if exist "build\windows\PrivacyEraser.exe" (
+if exist "build\windows\privacy_eraser.exe" (
     echo.
     echo ============================================================
     echo BUILD SUCCESSFUL!
     echo ============================================================
     echo.
-    echo Executable location: build\windows\PrivacyEraser.exe
+    echo Executable location: build\windows\privacy_eraser.exe
     echo.
 
     REM Get file size
-    for %%A in ("build\windows\PrivacyEraser.exe") do (
+    for %%A in ("build\windows\privacy_eraser.exe") do (
         set SIZE=%%~zA
         set /a SIZE_MB=!SIZE! / 1048576
         echo File size: !SIZE_MB! MB
