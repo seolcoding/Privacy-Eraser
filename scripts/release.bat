@@ -142,38 +142,19 @@ REM Delete existing "latest" release if it exists
 gh release delete "latest" --yes 2>nul
 echo   [OK] Old "latest" release deleted (if existed)
 
-REM Create release notes
-set RELEASE_NOTES=Privacy Eraser v%VERSION%^
+REM Check if RELEASE_NOTES.md exists
+if not exist "RELEASE_NOTES.md" (
+    echo [ERROR] RELEASE_NOTES.md not found!
+    pause
+    exit /b 1
+)
+echo   [OK] RELEASE_NOTES.md found
 
-^
-
-Flet (Flutter for Python) UI with Material Design 3^
-
-^
-
-**Features:**^
-
-- Modern Flet/Flutter-based UI framework^
-
-- Single-file executable (no installation)^
-
-- Browser privacy data cleaning^
-
-- Backup and restore functionality^
-
-- Schedule execution (UI ready)^
-
-- Download folder deletion option^
-
-^
-
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
-
-REM Create release with gh CLI
+REM Create release with gh CLI (using RELEASE_NOTES.md)
 gh release create "latest" ^
     "dist\PrivacyEraser.exe" ^
     --title "Privacy Eraser v%VERSION%" ^
-    --notes "%RELEASE_NOTES%"
+    --notes-file "RELEASE_NOTES.md"
 
 if %errorlevel% neq 0 (
     echo [ERROR] Failed to create GitHub release!
@@ -196,7 +177,7 @@ echo Tag: latest (always points to newest)
 echo Executable: dist\PrivacyEraser.exe (single file)
 echo Framework: Flet (Flutter for Python)
 echo.
-echo GitHub Release: https://github.com/yourusername/Privacy-Eraser/releases/latest
+echo GitHub Release: https://github.com/seolcoding/Privacy-Eraser/releases/latest
 echo.
 echo ============================================================
 echo.
