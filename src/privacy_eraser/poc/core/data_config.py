@@ -45,8 +45,7 @@ CLEANER_XML_MAP = {
     "brave": "bleachbit/cleaners/brave.xml",
     "opera": "bleachbit/cleaners/opera.xml",
     "whale": "bleachbit/cleaners/chrome.xml",  # Chromium 기반
-    "vivaldi": "bleachbit/cleaners/chrome.xml",  # Chromium 기반
-    "librewolf": "bleachbit/cleaners/firefox.xml",  # Firefox 기반
+    "safari": "bleachbit/cleaners/safari.xml",
 }
 
 # ═════════════════════════════════════════════════════════════
@@ -59,9 +58,8 @@ BROWSER_ICONS = {
     "firefox": "fa5b.firefox",  # Firefox 로고
     "brave": "fa5s.shield-alt",  # Brave (방패)
     "opera": "fa5b.opera",  # Opera 로고
-    "whale": "fa5s.fish",  # Whale (물고기 - 고래 대신)
-    "vivaldi": "fa5s.music",  # Vivaldi (음악)
-    "librewolf": "fa5s.paw",  # LibreWolf (발자국)
+    "whale": "fa5s.fish",  # Whale (물고기)
+    "safari": "fa5b.safari",  # Safari
 }
 
 BROWSER_COLORS = {
@@ -71,8 +69,7 @@ BROWSER_COLORS = {
     "brave": "#FB542B",
     "opera": "#FF1B2D",
     "whale": "#3B5998",
-    "vivaldi": "#EF3939",
-    "librewolf": "#00539F",
+    "safari": "#1F8FF0",
 }
 
 # ═════════════════════════════════════════════════════════════
@@ -86,8 +83,7 @@ BROWSER_PROCESSES = {
     "brave": ["brave.exe"],
     "opera": ["opera.exe"],
     "whale": ["whale.exe"],
-    "vivaldi": ["vivaldi.exe"],
-    "librewolf": ["librewolf.exe"],
+    "safari": ["safari.exe"],
 }
 
 # ═════════════════════════════════════════════════════════════
@@ -101,8 +97,7 @@ BROWSER_DISPLAY_NAMES = {
     "brave": "Brave",
     "opera": "Opera",
     "whale": "Whale",
-    "vivaldi": "Vivaldi",
-    "librewolf": "LibreWolf",
+    "safari": "Safari",
 }
 
 

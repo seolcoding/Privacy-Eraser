@@ -205,12 +205,24 @@ def detect_browsers() -> list[dict[str, str]]:
             process_names=("opera.exe",),
         ),
         ProgramProbe(
-            name="Vivaldi",
+            name="Whale",
             file_patterns=(
-                r"%LOCALAPPDATA%\Vivaldi\Application\vivaldi.exe",
-                r"%ProgramFiles%\Vivaldi\Application\vivaldi.exe",
+                r"%LOCALAPPDATA%\Naver\Naver Whale\Application\whale.exe",
+                r"%ProgramFiles%\Naver\Naver Whale\Application\whale.exe",
             ),
-            process_names=("vivaldi.exe",),
+            process_names=("whale.exe",),
+        ),
+        ProgramProbe(
+            name="Safari",
+            registry_keys=(
+                r"HKLM\SOFTWARE\Apple Computer, Inc.\Safari",
+                r"HKCU\SOFTWARE\Apple Computer, Inc.\Safari",
+            ),
+            file_patterns=(
+                r"%ProgramFiles%\Safari\Safari.exe",
+                r"%ProgramFiles(x86)%\Safari\Safari.exe",
+            ),
+            process_names=("safari.exe",),
         ),
     ]
 
