@@ -35,11 +35,12 @@ pytest-mock>=3.14.0
 ## Module Architecture
 
 ### Entry Point
-- `src/privacy_eraser/poc/flet_main.py`
+- `src/privacy_eraser/ui/main.py`
   - Main entry point: `main()` → launches Flet UI
   - Installed as scripts: `privacy_eraser`, `privacy_eraser_poc`
+- `main.py` (project root) - Build wrapper for Flet Pack
 
-### UI Layer (`poc/flet_main.py`)
+### UI Layer (`ui/main.py`)
 **Responsibilities:**
 - Material Design 3 interface using Flet
 - Browser detection and display (grid layout with logo images)

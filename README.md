@@ -33,10 +33,11 @@
 # Install dependencies
 uv sync
 
-# Run Flet POC
-python -m privacy_eraser.poc.flet_main
+# Run Flet UI
+python -m privacy_eraser.ui.main
 
 # Or use entry point
+privacy_eraser
 privacy_eraser_poc
 
 # Run tests
@@ -61,17 +62,21 @@ scripts/release.bat 2.0.1
 Privacy-Eraser/
 ├── src/privacy_eraser/
 │   ├── core/                 # Core cleaning engine
-│   ├── poc/                  # Flet UI POC
-│   │   ├── core/             # POC business logic
+│   │   ├── cleaner_engine.py
+│   │   ├── file_utils.py
+│   │   └── windows_utils.py
+│   ├── ui/                   # Flet UI (official GUI)
+│   │   ├── core/             # UI business logic
 │   │   │   ├── backup_manager.py
 │   │   │   ├── browser_info.py
 │   │   │   └── data_config.py
-│   │   └── flet_main.py      # Flet UI entry point
-│   ├── cleaning.py           # Core cleaner
-│   ├── detect_windows.py     # Browser detection
+│   │   └── main.py           # Flet UI entry point
+│   ├── cleaning.py           # Core cleaner engine
+│   ├── detect_windows.py     # Windows browser detection
 │   └── settings_db.py        # Settings persistence
-├── tests/                    # Test suite
-├── scripts/                  # Build scripts
+├── tests/                    # Test suite (22 tests)
+├── scripts/                  # Build scripts (Flet Pack)
+├── main.py                   # Build wrapper entry point
 └── static/images/            # Browser logos
 ```
 
