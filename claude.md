@@ -2,6 +2,29 @@
 
 이 문서는 Claude Code와 함께 작업할 때 사용하는 명령어와 프로세스를 기록합니다.
 
+## 📚 AI 개발 문서 참고 (중요!)
+
+**라이브러리나 프레임워크 사용 시 반드시 `ai-docs/` 디렉토리의 문서를 참고하세요.**
+
+### 주요 참고 문서
+
+- **PySide6 UI 개발 시**: `ai-docs/pyside.md`, `ai-docs/pyside_examples.md` 필독
+- **프로젝트 아키텍처 이해**: `ai-docs/context/architecture.md`
+- **테스트 작성**: `ai-docs/context/testing.md`
+
+### 사용 예시
+
+```
+# Claude Code에게 명령 시:
+"PySide6로 설정 다이얼로그를 만들어줘 (ai-docs/pyside.md 참고)"
+"새 기능 추가 시 프로젝트 구조 확인 (ai-docs/context/architecture.md 참고)"
+```
+
+**⚠️ 중요**:
+- PySide6 코드 작성 전에는 **반드시** `ai-docs/pyside.md`를 먼저 읽으세요
+- 예제가 필요하면 `ai-docs/pyside_examples.md`에서 유사한 코드를 찾으세요
+- 새로운 라이브러리 도입 시 ai-docs에 문서를 추가하세요
+
 ## 🚀 빌드 & 릴리즈 프로세스
 
 ### 로컬 빌드 후 수동 릴리즈 (권장)
