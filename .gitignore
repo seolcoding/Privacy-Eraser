@@ -13,7 +13,10 @@ venv/
 # Build
 build/
 dist/
+
+# PyInstaller
 *.spec
+!PrivacyEraser.spec
 
 # Editors/OS
 .DS_Store

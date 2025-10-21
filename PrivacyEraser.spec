@@ -92,6 +92,9 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    version='file_version_info.txt',  # Will be created if exists
     icon=None,  # TODO: Add icon file later
 )
+
+# Note: When all components are included in EXE (above),
+# PyInstaller creates a single-file executable automatically.
+# No COLLECT needed for onefile mode.

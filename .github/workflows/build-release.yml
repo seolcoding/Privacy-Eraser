@@ -34,7 +34,7 @@ jobs:
 
       - name: Build executable with PyInstaller
         run: |
-          uv run pyinstaller build_spec.py
+          uv run pyinstaller PrivacyEraser.spec
 
       - name: Get version from tag or commit
         id: version

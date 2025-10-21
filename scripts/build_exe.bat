@@ -50,7 +50,7 @@ if exist dist rmdir /s /q dist
 REM Run PyInstaller
 echo.
 echo [3/4] Building executable with PyInstaller...
-uv run pyinstaller build_spec.py
+uv run pyinstaller PrivacyEraser.spec
 if %errorlevel% neq 0 (
     echo [ERROR] PyInstaller build failed
     exit /b 1
