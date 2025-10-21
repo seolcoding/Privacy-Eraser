@@ -30,5 +30,27 @@ uv.lock
 .cursor/history/
 .cursor/notes/
 
+# Claude Code
+.claude/
+
+# Screenshots
+screenshots/
+*.png
+
+# Backups
+backups/
+
+# Reference/Docs (archived)
+reference/
+docs/
+proposal_docs/
+claudedocs/
+
+# Temporary test files
+test_*.py
+debug_*.py
+
+# Archive files
+*.zip
 
 bleachbit/
