@@ -195,7 +195,7 @@ class MainWindow(QMainWindow):
         self.clean_button.clicked.connect(self.on_clean_clicked)
         right_buttons.addWidget(self.clean_button)
 
-        footer_layout.addLayout(right_buttons, alignment=Qt.AlignRight | Qt.AlignVCenter)
+        footer_layout.addLayout(right_buttons)
 
         main_layout.addLayout(footer_layout)
 

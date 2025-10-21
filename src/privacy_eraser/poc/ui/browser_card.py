@@ -73,7 +73,7 @@ class BrowserCard(QWidget):
         self.checkbox.setChecked(self.is_selected)
         self.checkbox.setText("선택")
         self.checkbox.stateChanged.connect(self.on_checkbox_toggled)
-        layout.addWidget(self.checkbox, alignment=Qt.AlignCenter)
+        layout.addWidget(self.checkbox, 0, Qt.AlignCenter)
 
         # 스페이서 추가
         layout.addStretch()
