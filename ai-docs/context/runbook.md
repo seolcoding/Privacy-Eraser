@@ -18,10 +18,11 @@ uv run privacy_eraser
 
 ### Running the Application
 ```bash
-# Flet POC (main application)
-python -m privacy_eraser.poc.flet_main
+# Flet UI (main application)
+python -m privacy_eraser.ui.main
 
 # Or using installed script
+privacy_eraser
 privacy_eraser_poc
 
 # Or with uv
@@ -95,14 +96,14 @@ uv sync
 Set environment variable before running:
 ```bash
 # Windows
-set LOGURU_LEVEL=DEBUG && python -m privacy_eraser.poc.flet_main
+set LOGURU_LEVEL=DEBUG && python -m privacy_eraser.ui.main
 
 # Linux/macOS
-LOGURU_LEVEL=DEBUG python -m privacy_eraser.poc.flet_main
+LOGURU_LEVEL=DEBUG python -m privacy_eraser.ui.main
 ```
 
 ### Increase Log Verbosity
-Edit `src/privacy_eraser/poc/flet_main.py`:
+Edit `src/privacy_eraser/ui/main.py`:
 ```python
 logger.add(..., level="DEBUG")  # Change from "INFO"
 ```

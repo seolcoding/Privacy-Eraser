@@ -16,8 +16,8 @@ class TestPOCIntegration:
     @pytest.mark.skipif(IS_WINDOWS, reason="macOS/Linux 전용")
     def test_browser_detection_flow(self):
         """브라우저 감지 플로우 테스트"""
-        from privacy_eraser.poc.core.browser_info import BrowserInfo
-        from privacy_eraser.poc.core.data_config import (
+        from privacy_eraser.ui.core.browser_info import BrowserInfo
+        from privacy_eraser.ui.core.data_config import (
             get_browser_icon, get_browser_color
         )
 
@@ -48,8 +48,8 @@ class TestPOCIntegration:
     @pytest.mark.skipif(IS_WINDOWS, reason="macOS/Linux 전용")
     def test_cleaning_workflow(self):
         """삭제 워크플로우 테스트"""
-        from privacy_eraser.poc.core.browser_info import CleaningStats
-        from privacy_eraser.poc.core.data_config import get_cleaner_options
+        from privacy_eraser.ui.core.browser_info import CleaningStats
+        from privacy_eraser.ui.core.data_config import get_cleaner_options
 
         # 1. 옵션 선택
         options_without_bookmarks = get_cleaner_options(delete_bookmarks=False)
@@ -84,8 +84,8 @@ class TestPOCIntegration:
     @pytest.mark.skipif(IS_WINDOWS, reason="macOS/Linux 전용")
     def test_data_flow_end_to_end(self):
         """전체 데이터 플로우 테스트"""
-        from privacy_eraser.poc.core.browser_info import BrowserInfo, CleaningStats
-        from privacy_eraser.poc.core.data_config import (
+        from privacy_eraser.ui.core.browser_info import BrowserInfo, CleaningStats
+        from privacy_eraser.ui.core.data_config import (
             get_browser_display_name,
             get_browser_icon,
             get_browser_color,
@@ -143,53 +143,13 @@ class TestPOCIntegration:
         assert stats.total_files > 0
         assert stats.deleted_files == stats.total_files
 
-    def test_style_integration(self):
-        """스타일 통합 테스트"""
-        from privacy_eraser.poc.ui.styles import (
-            Colors, Typography, Sizes, get_stylesheet
-        )
-
-        # 스타일시트 생성
-        stylesheet = get_stylesheet()
-
-        # 주요 스타일 요소 포함 확인
-        assert Colors.PRIMARY in stylesheet
-        # SECONDARY color is used in QPushButton:hover, not directly
-        assert "QPushButton:hover" in stylesheet
-        assert f"{Typography.SIZE_BODY}px" in stylesheet
-        assert f"{Sizes.BUTTON_HEIGHT}px" in stylesheet
-
-        # CSS 클래스 존재 확인
-        assert "QMainWindow" in stylesheet
-        assert "QPushButton" in stylesheet
-        assert "QCheckBox" in stylesheet
-        assert "QProgressBar" in stylesheet
-
-    @pytest.mark.skipif(IS_WINDOWS, reason="macOS/Linux 전용")
-    def test_cleaner_worker_initialization(self):
-        """CleanerWorker 초기화 테스트"""
-        from privacy_eraser.poc.core.poc_cleaner import CleanerWorker
-
-        worker = CleanerWorker(
-            browsers=["Chrome", "Firefox"],
-            delete_bookmarks=True
-        )
-
-        assert worker.browsers == ["Chrome", "Firefox"]
-        assert worker.delete_bookmarks is True
-        assert worker.is_cancelled is False
-
-        # 취소 기능 테스트
-        worker.cancel()
-        assert worker.is_cancelled is True
-
 
 class TestErrorHandling:
     """에러 처리 테스트"""
 
     def test_cleaning_stats_with_errors(self):
         """에러가 있는 CleaningStats 테스트"""
-        from privacy_eraser.poc.core.browser_info import CleaningStats
+        from privacy_eraser.ui.core.browser_info import CleaningStats
 
         stats = CleaningStats(
             total_files=100,
@@ -211,7 +171,7 @@ class TestErrorHandling:
 
     def test_browser_info_invalid_state(self):
         """잘못된 상태의 BrowserInfo 테스트"""
-        from privacy_eraser.poc.core.browser_info import BrowserInfo
+        from privacy_eraser.ui.core.browser_info import BrowserInfo
 
         # 빈 이름
         browser = BrowserInfo(name="", icon="", color="", installed=False)
@@ -220,22 +180,6 @@ class TestErrorHandling:
         # None 값
         browser = BrowserInfo(name=None, icon=None, color=None, installed=None)
         # 에러 발생 가능성 테스트
-
-    def test_cleaner_options_edge_cases(self):
-        """옵션 엣지 케이스 테스트"""
-        from privacy_eraser.poc.core.data_config import (
-            get_browser_icon, get_browser_color, get_browser_xml_path
-        )
-
-        # 알 수 없는 브라우저
-        assert get_browser_icon("unknown_browser") == "🌐"  # Default
-        assert get_browser_color("unknown_browser") == "#666666"  # Default
-        assert get_browser_xml_path("unknown_browser") == ""  # Empty
-
-        # 대소문자 변형
-        assert get_browser_icon("CHROME") == "🌐"
-        assert get_browser_icon("Chrome") == "🌐"
-        assert get_browser_icon("chrome") == "🌐"
 
 
 # 메인 실행

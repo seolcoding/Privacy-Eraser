@@ -82,13 +82,14 @@ uv run flet pack main.py --name "PrivacyEraser" --add-data "static/images;static
 
 ## 🔧 개발 관련 명령어
 
-### POC 개발 서버 실행
+### Flet UI 실행
 
 ```bash
-# Flet POC 실행
-python -m privacy_eraser.poc.flet_main
+# Flet UI 실행
+python -m privacy_eraser.ui.main
 
 # 또는 엔트리포인트 사용
+privacy_eraser
 privacy_eraser_poc
 ```
 
