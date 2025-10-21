@@ -23,16 +23,18 @@ class CleanerWorker(QThread):
     cleaning_finished = Signal(CleaningStats)  # 작업 완료
     error_occurred = Signal(str)  # 에러 발생
 
-    def __init__(self, browsers: list[str], delete_bookmarks: bool = False, parent=None):
+    def __init__(self, browsers: list[str], delete_bookmarks: bool = False, delete_downloads: bool = False, parent=None):
         """
         Args:
             browsers: 선택된 브라우저 목록
             delete_bookmarks: 북마크 삭제 여부
+            delete_downloads: 다운로드 파일 삭제 여부
             parent: 부모 위젯
         """
         super().__init__(parent)
         self.browsers = browsers
         self.delete_bookmarks = delete_bookmarks
+        self.delete_downloads = delete_downloads
         self.is_cancelled = False
 
     def run(self) -> None:
@@ -106,7 +108,7 @@ class CleanerWorker(QThread):
         files = []
 
         # 옵션 정의
-        options = get_cleaner_options(self.delete_bookmarks)
+        options = get_cleaner_options(self.delete_bookmarks, self.delete_downloads)
 
         for browser in self.browsers:
             try:

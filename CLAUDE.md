@@ -473,3 +473,4 @@ A: SQLite database at `~/.privacy_eraser/settings.db` (see [settings_db.py](src/
 - Check [.cursor/context/runbook.md](.cursor/context/runbook.md) for detailed commands
 - Review [docs/](docs/) for architecture and design documents
 - See [TODO.md](TODO.md) for current task priorities
+- poc 가장 간단한 버전만을 개발함. 나머지는 개발하지 않음.

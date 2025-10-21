@@ -1,6 +1,7 @@
 """Privacy Eraser POC - 메인 진입점"""
 
 import sys
+import os
 from PySide6.QtWidgets import QApplication
 from loguru import logger
 
@@ -10,11 +11,22 @@ from privacy_eraser.poc.ui.styles import get_stylesheet
 
 def setup_logger() -> None:
     """로거 설정"""
+    # Windows 콘솔 UTF-8 설정
+    if os.name == 'nt':
+        os.system('chcp 65001 > nul')
+        try:
+            sys.stderr.reconfigure(encoding='utf-8')
+            sys.stdout.reconfigure(encoding='utf-8')
+        except Exception:
+            pass
+
     logger.remove()  # 기본 핸들러 제거
     logger.add(
         sys.stderr,
         format="<level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>",
-        level="INFO"
+        level="INFO",
+        encoding="utf-8",  # UTF-8 인코딩 명시
+        errors="replace"  # 인코딩 에러 시 대체 문자 사용
     )
 
 
