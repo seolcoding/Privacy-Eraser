@@ -17,15 +17,15 @@ import sys
 import glob
 
 from privacy_eraser.detect_windows import detect_browsers
-from privacy_eraser.poc.core.browser_info import BrowserInfo, CleaningStats
-from privacy_eraser.poc.core.data_config import (
+from privacy_eraser.ui.core.browser_info import BrowserInfo, CleaningStats
+from privacy_eraser.ui.core.data_config import (
     get_browser_icon,
     get_browser_color,
     get_browser_display_name,
     get_browser_xml_path,
     get_cleaner_options,
 )
-from privacy_eraser.poc.core.backup_manager import BackupManager
+from privacy_eraser.ui.core.backup_manager import BackupManager
 
 
 # ═════════════════════════════════════════════════════════════
