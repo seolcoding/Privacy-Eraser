@@ -16,7 +16,7 @@ echo.
 REM Check if Python is available
 where python >nul 2>&1
 if %errorlevel% neq 0 (
-    echo [ERROR] Python not found. Please install Python 3.12+
+    echo [ERROR] Python is missing. Please install Python 3.12+
     pause
     exit /b 1
 )
@@ -28,7 +28,7 @@ echo Python version: %PYTHON_VERSION%
 REM Check if Flet is installed
 python -c "import flet" >nul 2>&1
 if %errorlevel% neq 0 (
-    echo [ERROR] Flet not installed. Installing...
+    echo [ERROR] Flet is missing. Installing...
     pip install flet
 )
 
@@ -88,7 +88,7 @@ if exist "build\windows\PrivacyEraser.exe" (
     echo.
 ) else (
     echo.
-    echo [ERROR] Executable not found!
+    echo [ERROR] Executable is missing!
     echo Build may have failed silently.
     pause
     exit /b 1

@@ -41,7 +41,7 @@ echo.
 REM Check Python
 where python >nul 2>&1
 if %errorlevel% neq 0 (
-    echo [ERROR] Python not found. Please install Python 3.12+
+    echo [ERROR] Python is missing. Please install Python 3.12+
     pause
     exit /b 1
 )
@@ -50,7 +50,7 @@ echo   [OK] Python found
 REM Check Flet
 python -c "import flet" >nul 2>&1
 if %errorlevel% neq 0 (
-    echo [ERROR] Flet not installed. Installing...
+    echo [ERROR] Flet is missing. Installing...
     pip install flet
 )
 echo   [OK] Flet available
@@ -58,7 +58,7 @@ echo   [OK] Flet available
 REM Check GitHub CLI
 where gh >nul 2>&1
 if %errorlevel% neq 0 (
-    echo [ERROR] GitHub CLI (gh) not found!
+    echo [ERROR] GitHub CLI ^(gh^) is missing!
     echo Please install from: https://cli.github.com/
     pause
     exit /b 1
@@ -95,7 +95,7 @@ if %errorlevel% neq 0 (
 
 REM Verify executable exists
 if not exist "build\windows\PrivacyEraser.exe" (
-    echo [ERROR] Executable not found!
+    echo [ERROR] Executable is missing!
     pause
     exit /b 1
 )
