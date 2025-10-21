@@ -5,15 +5,15 @@ PyInstaller spec file for Privacy Eraser POC
 Builds a single-file Windows executable with all dependencies embedded.
 
 Usage:
-    pyinstaller build_spec.py
+    pyinstaller PrivacyEraser.spec
 """
 
 from PyInstaller.utils.hooks import collect_data_files, collect_submodules
 import sys
 from pathlib import Path
 
-# Project root
-PROJECT_ROOT = Path(__file__).parent
+# Project root (SPECPATH is provided by PyInstaller)
+PROJECT_ROOT = Path(SPECPATH)
 SRC_PATH = PROJECT_ROOT / "src"
 
 # Entry point script
