@@ -80,3 +80,11 @@ MIT License - See LICENSE file for details
 
 - Inspired by [BleachBit](https://www.bleachbit.org/)
 - Icons by [QtAwesome](https://github.com/spyder-ide/qtawesome)
+
+---
+
+<div align="center">
+
+**Developed with ❤️ by [설코딩](https://seolcoding.com)**
+
+</div>
