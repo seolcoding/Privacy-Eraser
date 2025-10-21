@@ -25,10 +25,6 @@ company = "seolcoding"
 copyright = "Copyright (C) 2025 seolcoding.com"
 build_number = 1
 
-[tool.flet.app]
-path = "src"
-module = "privacy_eraser.poc.flet_main"
-
 [build-system]
 requires = ["hatchling>=1.24"]
 build-backend = "hatchling.build"
