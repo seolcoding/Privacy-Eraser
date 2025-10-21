@@ -8,6 +8,8 @@ from PySide6.QtCore import Qt, Signal, QThread, QTimer
 from PySide6.QtGui import QFont
 
 from loguru import logger
+from pathlib import Path
+from datetime import datetime
 
 from privacy_eraser.poc.ui.styles import Colors, Spacing, Sizes, Typography, get_stylesheet
 from privacy_eraser.poc.ui.browser_card import BrowserCard
@@ -76,6 +78,7 @@ class MainWindow(QMainWindow):
         self.detected_browsers: list[BrowserInfo] = []
         self.browser_cards: dict[str, BrowserCard] = {}
         self.delete_bookmarks = False
+        self.delete_downloads = False  # 다운로드 파일 삭제 옵션
         self.cleaner_worker = None
         self.progress_dialog = None
 
@@ -114,63 +117,128 @@ class MainWindow(QMainWindow):
         description_label.setStyleSheet(f"color: {Colors.TEXT_SECONDARY};")
         main_layout.addWidget(description_label)
 
-        # 브라우저 카드 스크롤 영역
-        scroll_area = QScrollArea()
-        scroll_area.setWidgetResizable(True)
-        scroll_area.setStyleSheet(f"""
-        QScrollArea {{
-            border: none;
-            background-color: transparent;
-        }}
-        """)
-
-        # 브라우저 카드 컨테이너
+        # 브라우저 카드 컨테이너 (스크롤 없이 고정, 4x3 그리드)
         cards_container = QWidget()
         self.cards_layout = QGridLayout(cards_container)
-        self.cards_layout.setSpacing(Spacing.LG)
+        self.cards_layout.setSpacing(Spacing.MD)
         self.cards_layout.setContentsMargins(0, 0, 0, 0)
 
-        scroll_area.setWidget(cards_container)
-        main_layout.addWidget(scroll_area)
+        # 고정 높이 설정 (3행 * 180px + 간격)
+        cards_container.setMinimumHeight(3 * (Sizes.CARD_HEIGHT + Spacing.MD))
 
-        # 옵션 영역
-        options_layout = QHBoxLayout()
-        options_label = QLabel("옵션:")
+        main_layout.addWidget(cards_container)
+
+        # 스페이서 추가 (나머지 공간 차지)
+        main_layout.addStretch()
+
+        # 하단 영역: 추가 옵션 + 안내 텍스트 + 삭제 버튼 (같은 수평선)
+        footer_layout = QHBoxLayout()
+        footer_layout.setSpacing(Spacing.LG)
+
+        # 좌측: 옵션 영역
+        left_section = QVBoxLayout()
+        left_section.setSpacing(Spacing.SM)
+
+        options_label = QLabel("추가 옵션:")
         options_label.setFont(QFont(Typography.FONT_FAMILY, Typography.SIZE_BODY, Typography.WEIGHT_MEDIUM))
-        options_layout.addWidget(options_label)
+        left_section.addWidget(options_label)
 
-        self.bookmark_checkbox = QCheckBox("북마크도 삭제하기 (기본: 유지)")
+        # 북마크 체크박스
+        self.bookmark_checkbox = QCheckBox("북마크도 삭제")
         self.bookmark_checkbox.setFont(QFont(Typography.FONT_FAMILY, Typography.SIZE_BODY))
         self.bookmark_checkbox.stateChanged.connect(self.on_bookmark_toggle)
-        options_layout.addWidget(self.bookmark_checkbox)
+        left_section.addWidget(self.bookmark_checkbox)
 
-        options_layout.addStretch()
-        main_layout.addLayout(options_layout)
+        # 다운로드 파일 체크박스
+        self.downloads_checkbox = QCheckBox("다운로드 파일도 삭제")
+        self.downloads_checkbox.setFont(QFont(Typography.FONT_FAMILY, Typography.SIZE_BODY))
+        self.downloads_checkbox.stateChanged.connect(self.on_downloads_toggle)
+        left_section.addWidget(self.downloads_checkbox)
 
         # 안내 텍스트
-        info_label = QLabel()
-        info_label.setText("삭제 대상: 로그인 데이터, 히스토리, 쿠키, 세션, 비밀번호")
+        info_label = QLabel("기본 삭제: 캐시, 쿠키, 히스토리, 세션, 비밀번호")
         info_label.setFont(QFont(Typography.FONT_FAMILY, Typography.SIZE_CAPTION))
-        info_label.setStyleSheet(f"color: {Colors.TEXT_SECONDARY};")
-        main_layout.addWidget(info_label)
+        info_label.setStyleSheet(f"color: {Colors.TEXT_HINT};")
+        left_section.addWidget(info_label)
+
+        footer_layout.addLayout(left_section)
+
+        # 중간 스페이서
+        footer_layout.addStretch()
+
+        # 우측: 버튼 영역
+        right_buttons = QHBoxLayout()
+        right_buttons.setSpacing(Spacing.MD)
+
+        # 실행 취소 버튼
+        self.undo_button = QPushButton("↩️  실행 취소")
+        self.undo_button.setMinimumWidth(140)
+        self.undo_button.setMinimumHeight(Sizes.BUTTON_HEIGHT)
+        self.undo_button.setFont(QFont(Typography.FONT_FAMILY, Typography.SIZE_BODY, Typography.WEIGHT_MEDIUM))
+        self.undo_button.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {Colors.SECONDARY};
+                color: white;
+            }}
+            QPushButton:hover {{
+                background-color: {Colors.SECONDARY_DARK};
+            }}
+        """)
+        self.undo_button.clicked.connect(self.on_undo_clicked)
+        right_buttons.addWidget(self.undo_button)
 
         # 삭제 버튼
-        clean_button_layout = QHBoxLayout()
-        clean_button_layout.addStretch()
-
-        self.clean_button = QPushButton()
-        self.clean_button.setText("🗑️  개인정보 지우기")
+        self.clean_button = QPushButton("🗑️  개인정보 지우기")
         self.clean_button.setMinimumWidth(200)
         self.clean_button.setMinimumHeight(Sizes.BUTTON_HEIGHT)
+        self.clean_button.setFont(QFont(Typography.FONT_FAMILY, Typography.SIZE_BODY, Typography.WEIGHT_MEDIUM))
         self.clean_button.clicked.connect(self.on_clean_clicked)
-        clean_button_layout.addWidget(self.clean_button)
+        right_buttons.addWidget(self.clean_button)
 
-        clean_button_layout.addStretch()
-        main_layout.addLayout(clean_button_layout)
+        footer_layout.addLayout(right_buttons)
+
+        main_layout.addLayout(footer_layout)
 
     def apply_styles(self) -> None:
         """스타일 적용"""
         self.setStyleSheet(get_stylesheet())
+
+    def showEvent(self, event) -> None:
+        """윈도우 표시 이벤트 (스크린샷 캡처용)"""
+        super().showEvent(event)
+
+        # 윈도우가 완전히 렌더링된 후 스크린샷 캡처 (1초 후)
+        QTimer.singleShot(1000, self.take_screenshot)
+
+    def take_screenshot(self) -> None:
+        """GUI 스크린샷 저장
+
+        screenshots/ 디렉토리에 타임스탬프 파일명으로 저장
+        latest.png 링크도 업데이트
+        """
+        try:
+            # 스크린샷 디렉토리 생성
+            screenshots_dir = Path("screenshots")
+            screenshots_dir.mkdir(exist_ok=True)
+
+            # 타임스탬프 파일명
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = screenshots_dir / f"poc_gui_{timestamp}.png"
+
+            # 스크린샷 캡처
+            pixmap = self.grab()
+            pixmap.save(str(filename))
+
+            logger.info(f"스크린샷 저장: {filename}")
+
+            # latest.png 링크 업데이트 (Windows에서는 복사)
+            latest_path = screenshots_dir / "latest.png"
+            pixmap.save(str(latest_path))
+
+            logger.info(f"최신 스크린샷: {latest_path}")
+
+        except Exception as e:
+            logger.error(f"스크린샷 캡처 실패: {e}")
 
     def detect_browsers_async(self) -> None:
         """비동기로 브라우저 감지"""
@@ -181,11 +249,14 @@ class MainWindow(QMainWindow):
 
     def on_browsers_detected(self, browsers: list[BrowserInfo]) -> None:
         """브라우저 감지 완료 시"""
-        logger.info(f"{len(browsers)}개 브라우저 감지됨")
-        self.detected_browsers = browsers
+        # 설치된 브라우저만 필터링
+        installed_browsers = [b for b in browsers if b.installed]
 
-        # 카드 생성 및 그리드에 추가
-        for i, browser_info in enumerate(browsers):
+        logger.info(f"{len(browsers)}개 브라우저 스캔, {len(installed_browsers)}개 설치됨")
+        self.detected_browsers = installed_browsers
+
+        # 카드 생성 및 그리드에 추가 (설치된 브라우저만)
+        for i, browser_info in enumerate(installed_browsers):
             row = i // 3
             col = i % 3
 
@@ -205,6 +276,18 @@ class MainWindow(QMainWindow):
         """북마크 토글"""
         self.delete_bookmarks = self.bookmark_checkbox.isChecked()
         logger.info(f"북마크 삭제: {self.delete_bookmarks}")
+
+    def on_downloads_toggle(self, state: int) -> None:
+        """다운로드 파일 토글"""
+        self.delete_downloads = self.downloads_checkbox.isChecked()
+        logger.info(f"다운로드 파일 삭제: {self.delete_downloads}")
+
+    def on_undo_clicked(self) -> None:
+        """실행 취소 버튼 클릭"""
+        from privacy_eraser.poc.ui.undo_dialog import UndoDialog
+
+        dialog = UndoDialog(self)
+        dialog.exec()
 
     def on_clean_clicked(self) -> None:
         """삭제 버튼 클릭"""
@@ -241,10 +324,14 @@ class MainWindow(QMainWindow):
         # 워커 스레드 생성
         self.cleaner_worker = CleanerWorker(
             browsers=selected_browsers,
-            delete_bookmarks=self.delete_bookmarks
+            delete_bookmarks=self.delete_bookmarks,
+            delete_downloads=self.delete_downloads
         )
 
         # 시그널 연결
+        self.cleaner_worker.started.connect(
+            lambda: self.progress_dialog.start_cleaning()
+        )
         self.cleaner_worker.progress_updated.connect(
             lambda path, size: self.progress_dialog.update_progress(path, size)
         )

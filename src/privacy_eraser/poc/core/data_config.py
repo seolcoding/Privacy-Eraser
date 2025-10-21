@@ -22,6 +22,11 @@ BOOKMARK_OPTIONS = [
     "favicons",  # 파비콘
 ]
 
+# 다운로드 파일 옵션 (토글 활성화 시만 삭제)
+DOWNLOAD_OPTIONS = [
+    "download_history",  # 다운로드 히스토리
+]
+
 # 제외할 옵션 (항상 보존)
 EXCLUDE_OPTIONS = [
     "extensions",  # 확장 프로그램
@@ -49,14 +54,14 @@ CLEANER_XML_MAP = {
 # ═════════════════════════════════════════════════════════════
 
 BROWSER_ICONS = {
-    "chrome": "🌐",
-    "edge": "🌐",
-    "firefox": "🦊",
-    "brave": "🦁",
-    "opera": "🅾️",
-    "whale": "🐋",
-    "vivaldi": "🎨",
-    "librewolf": "🦊",
+    "chrome": "fa5b.chrome",  # Chrome 로고
+    "edge": "fa5b.edge",  # Edge 로고
+    "firefox": "fa5b.firefox",  # Firefox 로고
+    "brave": "fa5s.shield-alt",  # Brave (방패)
+    "opera": "fa5b.opera",  # Opera 로고
+    "whale": "fa5s.fish",  # Whale (물고기 - 고래 대신)
+    "vivaldi": "fa5s.music",  # Vivaldi (음악)
+    "librewolf": "fa5s.paw",  # LibreWolf (발자국)
 }
 
 BROWSER_COLORS = {
@@ -121,9 +126,19 @@ def get_browser_xml_path(browser_name: str) -> str:
     return CLEANER_XML_MAP.get(browser_name.lower(), "")
 
 
-def get_cleaner_options(delete_bookmarks: bool = False) -> list[str]:
-    """삭제 옵션 목록 반환"""
+def get_cleaner_options(delete_bookmarks: bool = False, delete_downloads: bool = False) -> list[str]:
+    """삭제 옵션 목록 반환
+
+    Args:
+        delete_bookmarks: 북마크 삭제 여부
+        delete_downloads: 다운로드 파일 삭제 여부
+
+    Returns:
+        삭제할 옵션 목록
+    """
     options = DEFAULT_CLEANER_OPTIONS.copy()
     if delete_bookmarks:
         options.extend(BOOKMARK_OPTIONS)
+    if delete_downloads:
+        options.extend(DOWNLOAD_OPTIONS)
     return options

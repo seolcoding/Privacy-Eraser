@@ -1,8 +1,9 @@
 """브라우저 카드 위젯 - 감지된 브라우저 시각화"""
 
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QCheckBox
-from PySide6.QtCore import Qt, Signal, QPropertyAnimation, QEasingCurve
+from PySide6.QtCore import Qt, Signal, QPropertyAnimation, QEasingCurve, QSize
 from PySide6.QtGui import QFont
+import qtawesome as qta
 
 from privacy_eraser.poc.core.browser_info import BrowserInfo
 from privacy_eraser.poc.ui.styles import Colors, Spacing, Sizes, Typography, Animation
@@ -40,10 +41,25 @@ class BrowserCard(QWidget):
                                   Spacing.CARD_PADDING, Spacing.CARD_PADDING)
         layout.setSpacing(Spacing.MD)
 
-        # 아이콘 레이블
-        icon_label = QLabel(self.browser_info.icon)
+        # 아이콘 레이블 (qtawesome 사용, 48px)
+        icon_label = QLabel()
         icon_label.setAlignment(Qt.AlignCenter)
-        icon_label.setFont(QFont(Typography.FONT_FAMILY, 32))
+
+        # qtawesome 아이콘 생성 (48px)
+        try:
+            icon = qta.icon(
+                self.browser_info.icon,
+                color=self.browser_info.color,
+                scale_factor=1.5  # 1.5배 크기
+            )
+            pixmap = icon.pixmap(QSize(48, 48))  # 48x48 픽셀
+            icon_label.setPixmap(pixmap)
+        except Exception as e:
+            # qtawesome 아이콘 로드 실패 시 텍스트로 표시
+            icon_label.setText(self.browser_info.name[0])  # 첫 글자
+            icon_label.setFont(QFont(Typography.FONT_FAMILY, 32, Typography.WEIGHT_BOLD))
+            icon_label.setStyleSheet(f"color: {self.browser_info.color};")
+
         layout.addWidget(icon_label)
 
         # 브라우저 이름
@@ -56,9 +72,8 @@ class BrowserCard(QWidget):
         self.checkbox = QCheckBox()
         self.checkbox.setChecked(self.is_selected)
         self.checkbox.setText("선택")
-        self.checkbox.setAlignment(Qt.AlignCenter)
         self.checkbox.stateChanged.connect(self.on_checkbox_toggled)
-        layout.addWidget(self.checkbox)
+        layout.addWidget(self.checkbox, 0, Qt.AlignCenter)
 
         # 스페이서 추가
         layout.addStretch()
@@ -73,39 +88,36 @@ class BrowserCard(QWidget):
             background-color: {Colors.SURFACE};
             border: 2px solid {Colors.SURFACE_VARIANT};
             border-radius: {Sizes.CARD_RADIUS}px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
         }}
         """
         self.setStyleSheet(stylesheet)
 
     def enterEvent(self, event) -> None:
-        """마우스 호버 시 그림자 증가"""
+        """마우스 호버 시 테두리 강조"""
         super().enterEvent(event)
         self.is_hovered = True
 
-        # 그림자 증가 애니메이션
+        # 호버 시 테두리 강조
         self.setStyleSheet(f"""
         BrowserCard {{
             background-color: {Colors.SURFACE};
-            border: 2px solid {Colors.PRIMARY_LIGHT};
+            border: 3px solid {Colors.PRIMARY_LIGHT};
             border-radius: {Sizes.CARD_RADIUS}px;
-            box-shadow: 0 3px 6px rgba(0,0,0,0.16), 0 3px 6px rgba(0,0,0,0.23);
         }}
         """)
 
     def leaveEvent(self, event) -> None:
-        """마우스 떠날 때 그림자 복원"""
+        """마우스 떠날 때 테두리 복원"""
         super().leaveEvent(event)
         self.is_hovered = False
 
-        # 그림자 원상복구
+        # 테두리 원상복구
         selected_border = Colors.PRIMARY if self.is_selected else Colors.SURFACE_VARIANT
         self.setStyleSheet(f"""
         BrowserCard {{
             background-color: {Colors.SURFACE};
             border: 2px solid {selected_border};
             border-radius: {Sizes.CARD_RADIUS}px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
         }}
         """)
 
@@ -120,7 +132,6 @@ class BrowserCard(QWidget):
             background-color: {Colors.SURFACE};
             border: 2px solid {border_color};
             border-radius: {Sizes.CARD_RADIUS}px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
         }}
         """)
 

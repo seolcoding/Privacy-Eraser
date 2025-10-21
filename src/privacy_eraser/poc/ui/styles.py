@@ -19,15 +19,15 @@ class Colors:
     SECONDARY_LIGHT = "#5DF2D6"
     SECONDARY_DARK = "#008E76"
 
-    # Background & Surface
-    BACKGROUND = "#FAFAFA"
-    SURFACE = "#FFFFFF"
-    SURFACE_VARIANT = "#F5F5F5"
+    # Background & Surface - 대비 개선
+    BACKGROUND = "#E8EAF6"  # 더 어두운 배경 (연한 보라)
+    SURFACE = "#FFFFFF"  # 흰색 카드
+    SURFACE_VARIANT = "#F5F5F5"  # 약간 회색
 
-    # Text Colors
-    TEXT_PRIMARY = "#212121"
-    TEXT_SECONDARY = "#757575"
-    TEXT_HINT = "#BDBDBD"
+    # Text Colors - 더 진한 텍스트
+    TEXT_PRIMARY = "#1A1A1A"  # 거의 검정
+    TEXT_SECONDARY = "#5F6368"  # 더 진한 회색
+    TEXT_HINT = "#9E9E9E"  # 중간 회색
 
     # Status Colors
     SUCCESS = "#4CAF50"
@@ -63,14 +63,14 @@ class Typography:
 
     FONT_FAMILY = "Segoe UI, Roboto, -apple-system, BlinkMacSystemFont, sans-serif"
 
-    # Font Sizes (pixels)
-    SIZE_H1 = 32
-    SIZE_H2 = 24
-    SIZE_H3 = 20
-    SIZE_BODY = 14
-    SIZE_BODY_SMALL = 13
-    SIZE_LABEL = 12
-    SIZE_CAPTION = 12
+    # Font Sizes (pixels) - 가독성 개선
+    SIZE_H1 = 36
+    SIZE_H2 = 28
+    SIZE_H3 = 22
+    SIZE_BODY = 16  # 14 → 16
+    SIZE_BODY_SMALL = 15  # 13 → 15
+    SIZE_LABEL = 14  # 12 → 14
+    SIZE_CAPTION = 14  # 12 → 14
 
     # Font Weights
     WEIGHT_LIGHT = 300
@@ -113,9 +113,9 @@ class Spacing:
 class Sizes:
     """컴포넌트 크기 정의"""
 
-    # Card & Component Sizes
-    CARD_WIDTH = 150
-    CARD_HEIGHT = 180
+    # Card & Component Sizes - 아이콘 48px에 맞춤
+    CARD_WIDTH = 160  # 200 → 160 (아이콘 48px + 여백)
+    CARD_HEIGHT = 180  # 220 → 180
     CARD_RADIUS = 12
 
     # Button Sizes
@@ -130,11 +130,11 @@ class Sizes:
     TOGGLE_HEIGHT = 32
     TOGGLE_WIDTH = 56
 
-    # Window Sizes
-    MAIN_WINDOW_WIDTH = 850
-    MAIN_WINDOW_HEIGHT = 750
-    PROGRESS_DIALOG_WIDTH = 650
-    PROGRESS_DIALOG_HEIGHT = 550
+    # Window Sizes - 축소 (더 컴팩트하게)
+    MAIN_WINDOW_WIDTH = 700  # 850 → 700
+    MAIN_WINDOW_HEIGHT = 600  # 750 → 600
+    PROGRESS_DIALOG_WIDTH = 550  # 650 → 550
+    PROGRESS_DIALOG_HEIGHT = 500  # 550 → 500
 
 
 # ═════════════════════════════════════════════════════════════
@@ -230,12 +230,10 @@ QPushButton {{
 
 QPushButton:hover {{
     background-color: {Colors.PRIMARY_DARK};
-    box-shadow: 0 4px 8px rgba(0,0,0,0.25);
 }}
 
 QPushButton:pressed {{
     background-color: {Colors.PRIMARY_DARK};
-    box-shadow: 0 2px 4px rgba(0,0,0,0.25);
 }}
 
 /* ───────────────────────────────────────────────────────────── */
@@ -391,9 +389,8 @@ def get_card_stylesheet(
     """카드 스타일시트 반환 (동적)"""
     base = f"""
     background-color: {background_color};
-    border: none;
+    border: 2px solid {border_color};
     border-radius: {Sizes.CARD_RADIUS}px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
     """
 
     if hover:
@@ -405,24 +402,26 @@ def get_card_stylesheet(
 
 
 # ═════════════════════════════════════════════════════════════
-# 그림자 스타일 (HTML/CSS)
+# 그림자 스타일 (HTML/CSS) - Qt StyleSheet에서는 미지원
 # ═════════════════════════════════════════════════════════════
+# 주의: Qt StyleSheet는 box-shadow를 지원하지 않습니다.
+# 아래는 참고용으로만 남겨둡니다.
 
 SHADOW_STYLES = {
     "elevation_1": (
         f"box-shadow: 0 1px 3px {Colors.SHADOW_1}, "
-        f"0 1px 2px rgba(0,0,0,0.24);"
+        f"0 1px 2px rgba(0,0,0,0.24);  /* Qt 미지원 */"
     ),
     "elevation_2": (
         f"box-shadow: 0 3px 6px {Colors.SHADOW_2}, "
-        f"0 3px 6px rgba(0,0,0,0.23);"
+        f"0 3px 6px rgba(0,0,0,0.23);  /* Qt 미지원 */"
     ),
     "elevation_4": (
         f"box-shadow: 0 10px 20px {Colors.SHADOW_4}, "
-        f"0 6px 6px rgba(0,0,0,0.23);"
+        f"0 6px 6px rgba(0,0,0,0.23);  /* Qt 미지원 */"
     ),
     "elevation_8": (
         f"box-shadow: 0 19px 38px {Colors.SHADOW_8}, "
-        f"0 15px 12px rgba(0,0,0,0.22);"
+        f"0 15px 12px rgba(0,0,0,0.22);  /* Qt 미지원 */"
     ),
 }
