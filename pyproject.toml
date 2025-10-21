@@ -1,24 +1,33 @@
 [project]
 name = "privacy_eraser"
-version = "1.0.0"
+version = "2.0.0"
 description = "PrivacyEraser - Professional privacy management tool with Flet UI and BleachBit core"
 readme = "readme.md"
 requires-python = ">=3.12"
+authors = [
+    { name = "seolcoding", email = "contact@seolcoding.com" }
+]
 dependencies = [
+    "flet>=0.28.0",
     "pillow>=10.0.0",
-    "setuptools>=68",
     "loguru>=0.7.2",
-    "rich>=13.7.1",
     "psutil>=5.9.8",
-    "apscheduler>=3.11.0",
-    "watchdog>=6.0.0",
-    "uv>=0.9.4",
-    "flet>=0.25.0",
 ]
 
 [project.scripts]
 privacy_eraser = "privacy_eraser.__main__:main"
 privacy_eraser_poc = "privacy_eraser.poc.flet_main:main"
+
+[tool.flet]
+org = "com.seolcoding"
+product = "Privacy Eraser"
+company = "seolcoding"
+copyright = "Copyright (C) 2025 seolcoding.com"
+build_number = 1
+
+[tool.flet.app]
+path = "src"
+module = "privacy_eraser.poc.flet_main"
 
 [build-system]
 requires = ["hatchling>=1.24"]

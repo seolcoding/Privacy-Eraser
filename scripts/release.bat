@@ -47,13 +47,18 @@ if %errorlevel% neq 0 (
 )
 echo   [OK] Python found
 
-REM Check Flet
+REM Check Flet and Flet CLI
 python -c "import flet" >nul 2>&1
 if %errorlevel% neq 0 (
     echo [ERROR] Flet is missing. Installing...
     pip install flet
 )
-echo   [OK] Flet available
+python -c "import flet_cli" >nul 2>&1
+if %errorlevel% neq 0 (
+    echo [ERROR] Flet CLI is missing. Installing...
+    pip install flet-cli
+)
+echo   [OK] Flet and Flet CLI available
 
 REM Check GitHub CLI
 where gh >nul 2>&1
@@ -77,8 +82,8 @@ REM Clean previous builds
 if exist "build" rmdir /s /q "build"
 if exist "dist" rmdir /s /q "dist"
 
-REM Build with Flet
-flet build windows ^
+REM Build with Flet CLI
+python -m flet_cli build windows ^
     --project "Privacy Eraser" ^
     --description "Privacy management tool with Flet UI" ^
     --product-name "Privacy Eraser" ^
