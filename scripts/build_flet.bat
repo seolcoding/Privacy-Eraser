@@ -50,14 +50,8 @@ echo [2/3] Building Flet app...
 echo.
 
 REM Flet build command for Windows
-flet build windows ^
-    --project "Privacy Eraser" ^
-    --description "Privacy management tool with Flet UI" ^
-    --product-name "Privacy Eraser" ^
-    --product-version "2.0.0" ^
-    --copyright "Copyright (c) 2025 seolcoding.com" ^
-    --build-name "2.0.0" ^
-    --build-number 1
+REM All metadata is configured in pyproject.toml
+uv run flet build windows
 
 if %errorlevel% neq 0 (
     echo.

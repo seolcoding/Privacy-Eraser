@@ -83,14 +83,8 @@ if exist "build" rmdir /s /q "build"
 if exist "dist" rmdir /s /q "dist"
 
 REM Build with Flet CLI
-python -m flet_cli build windows ^
-    --project "Privacy Eraser" ^
-    --description "Privacy management tool with Flet UI" ^
-    --product-name "Privacy Eraser" ^
-    --product-version "%VERSION%" ^
-    --copyright "Copyright (c) 2025 seolcoding.com" ^
-    --build-name "%VERSION%" ^
-    --build-number 1
+REM All metadata is configured in pyproject.toml
+python -m flet_cli build windows
 
 if %errorlevel% neq 0 (
     echo [ERROR] Build failed!
