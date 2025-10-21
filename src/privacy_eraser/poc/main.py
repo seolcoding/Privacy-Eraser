@@ -9,9 +9,11 @@ from privacy_eraser.poc.ui.main_window import MainWindow
 from privacy_eraser.poc.ui.styles import get_stylesheet
 
 
-def setup_logger() -> None:
-    """로거 설정"""
-    # Windows 콘솔 UTF-8 설정
+def setup_utf8_console() -> None:
+    """Windows 콘솔 UTF-8 설정
+
+    loguru는 자동으로 sys.stderr에 로깅하므로 별도 설정 불필요
+    """
     if os.name == 'nt':
         os.system('chcp 65001 > nul')
         try:
@@ -20,19 +22,11 @@ def setup_logger() -> None:
         except Exception:
             pass
 
-    logger.remove()  # 기본 핸들러 제거
-    logger.add(
-        sys.stderr,
-        format="<level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>",
-        level="INFO"
-        # Note: loguru automatically uses sys.stderr's encoding (already configured as UTF-8 above)
-    )
-
 
 def main() -> None:
     """메인 함수"""
-    # 로거 설정
-    setup_logger()
+    # Windows 콘솔 UTF-8 설정
+    setup_utf8_console()
     logger.info("Privacy Eraser POC 시작")
 
     # Qt 애플리케이션 생성
