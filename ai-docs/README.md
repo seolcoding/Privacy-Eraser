@@ -4,10 +4,9 @@
 
 ## 📚 주요 문서
 
-### PySide6 관련 (⭐ 중요)
+### Flet 관련 (⭐ 중요)
 
-- **pyside.md** - PySide6 핵심 가이드 및 베스트 프랙티스
-- **pyside_examples.md** - PySide6 예제 코드 모음 (대규모 참고 자료)
+- **flet.md** - Flet/Flutter UI 핵심 가이드 및 베스트 프랙티스
 
 ### 프로젝트 컨텍스트
 
@@ -25,7 +24,7 @@
 
 **라이브러리 사용 시 반드시 이 문서들을 참고하세요:**
 
-1. **PySide6 UI 개발 시** → `pyside.md`, `pyside_examples.md` 필독
+1. **Flet UI 개발 시** → `flet.md` 필독
 2. **프로젝트 아키텍처 이해 시** → `context/architecture.md` 참고
 3. **테스트 작성 시** → `context/testing.md` 참고
 
@@ -33,7 +32,7 @@
 
 ```
 # AI에게 명령 예시:
-"PySide6로 새 다이얼로그를 만들어줘 (ai-docs/pyside.md 참고)"
+"Flet으로 새 다이얼로그를 만들어줘 (ai-docs/flet.md 참고)"
 "프로젝트 구조 설명해줘 (ai-docs/context/architecture.md 참고)"
 ```
 

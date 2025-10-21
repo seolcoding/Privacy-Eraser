@@ -16,7 +16,7 @@ dependencies = [
 ]
 
 [project.scripts]
-privacy_eraser = "privacy_eraser.__main__:main"
+privacy_eraser = "privacy_eraser.poc.flet_main:main"
 privacy_eraser_poc = "privacy_eraser.poc.flet_main:main"
 
 [tool.flet]
