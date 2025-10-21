@@ -24,7 +24,7 @@
 - Flet 코드 작성 전에는 **반드시** `ai-docs/flet.md`를 먼저 읽으세요
 - 새로운 라이브러리 도입 시 ai-docs에 문서를 추가하세요
 
-## 🚀 빌드 & 릴리즈 프로세스 (Flet)
+## 🚀 빌드 & 릴리즈 프로세스 (Flet Pack)
 
 ### 자동 빌드 & 릴리즈 (권장 ⭐)
 
@@ -34,7 +34,7 @@
 
 ```bash
 # 버전을 인자로 전달
-scripts\release.bat 2.0.0
+scripts\release.bat 2.0.1
 
 # 또는 실행 후 버전 입력
 scripts\release.bat
@@ -44,14 +44,21 @@ scripts\release.bat
 
 1. ✅ 버전 입력 (또는 인자로 전달)
 2. ✅ 의존성 확인 (Python, Flet, gh CLI)
-3. ✅ Flet 빌드 실행
-4. ✅ Git 태그 생성 및 푸시
-5. ✅ GitHub Release 생성 및 EXE 업로드
+3. ✅ **단일 파일 EXE 빌드** (Flet Pack - PyInstaller 기반)
+4. ✅ Git `latest` 태그 생성 및 푸시 (항상 최신 버전 가리킴)
+5. ✅ GitHub Release 생성 및 단일 EXE 업로드
 
 **Requirements:**
 - Python 3.12+
 - Flet (`pip install flet`)
+- uv (`pip install uv` 또는 https://github.com/astral-sh/uv)
 - GitHub CLI (`gh`) 설치: https://cli.github.com/
+
+**주요 특징:**
+- 🎯 **단일 파일 배포**: `dist/PrivacyEraser.exe` 하나만 배포
+- 🏷️ **`latest` 태그**: 항상 최신 릴리스를 가리킴 (버전 태그 불필요)
+- 🖼️ **이미지 포함**: `static/images` 자동 번들링
+- 🚀 **Flet/Flutter 기반**: Material Design 3 UI
 
 ---
 
@@ -60,12 +67,16 @@ scripts\release.bat
 빌드만 필요한 경우:
 
 ```bash
-# Flet 빌드 실행
-scripts\build_flet.bat
+# 단일 파일 EXE 빌드 (Flet Pack)
+scripts\build_pack.bat
 
-# 또는 직접 Flet 명령어 실행
-flet build windows
+# 또는 직접 실행
+uv run flet pack main.py --name "PrivacyEraser" --add-data "static/images;static/images"
 ```
+
+**두 가지 빌드 방식:**
+1. **Flet Pack** (권장): 단일 exe 파일, PyInstaller 기반
+2. **Flet Build**: 폴더 형태, Flutter SDK 기반, 더 빠름
 
 ---
 
@@ -142,15 +153,18 @@ Flet POC 실행해줘
 
 ## 🛠️ 트러블슈팅
 
-### Flet 빌드 실패
-- Flet 설치 확인: `pip install flet`
-- Python 버전 확인: Python 3.12+ 필요
-- 빌드 경로 확인: `build/windows/PrivacyEraser.exe`
+### Flet Pack 빌드 실패
+- **Flet 설치 확인**: `pip install flet`
+- **uv 설치 확인**: `pip install uv` 또는 https://github.com/astral-sh/uv
+- **Python 버전 확인**: Python 3.12+ 필요
+- **빌드 경로 확인**: `dist/PrivacyEraser.exe` (단일 파일)
+- **이미지 포함 확인**: `--add-data "static/images;static/images"` 옵션 포함
 
 ### 릴리즈 스크립트 오류
 - **gh CLI가 없는 경우**: https://cli.github.com/ 에서 설치
-- **태그가 이미 존재**: 스크립트가 자동으로 덮어쓰기 여부 물어봄
+- **`latest` 태그 충돌**: 스크립트가 자동으로 삭제 후 재생성 (--force)
 - **gh 인증 실패**: `gh auth login` 으로 GitHub 계정 로그인
+- **이전 릴리즈 덮어쓰기**: `latest` 릴리스 자동 삭제 후 재생성
 
 ### 의존성 설치 오류
 - `uv sync` 실행하여 모든 의존성 설치
@@ -161,6 +175,7 @@ Flet POC 실행해줘
 - logger 설정: encoding 파라미터 제거 (loguru 기본 사용)
 - uv로 항상 실행
 
-### Flet 앱 실행 오류
-- 이미지 파일 경로 확인: `static/images/` 폴더 존재 여부
-- 브라우저 로고 파일 확인: chrome.png, edge.png 등
+### 빌드된 앱에서 이미지 안보임
+- `get_resource_path()` 함수 사용 확인 (PyInstaller 경로 처리)
+- `--add-data` 옵션으로 이미지 포함 확인
+- `static/images/` 폴더 존재 여부 확인

@@ -13,6 +13,7 @@ from datetime import datetime
 import webbrowser
 
 import os
+import sys
 import glob
 
 from privacy_eraser.detect_windows import detect_browsers
@@ -25,6 +26,22 @@ from privacy_eraser.poc.core.data_config import (
     get_cleaner_options,
 )
 from privacy_eraser.poc.core.backup_manager import BackupManager
+
+
+# ═════════════════════════════════════════════════════════════
+# Resource Path Helper
+# ═════════════════════════════════════════════════════════════
+
+
+def get_resource_path(relative_path):
+    """Get absolute path to resource, works for dev and for PyInstaller"""
+    try:
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+
+    return os.path.join(base_path, relative_path)
 
 
 # ═════════════════════════════════════════════════════════════
@@ -278,18 +295,18 @@ class BrowserCard(ft.Container):
 
         # Icon image mapping (브라우저별 이미지 파일)
         icon_image_map = {
-            "chrome": "static/images/chrome.png",
-            "edge": "static/images/edge.png",
-            "firefox": "static/images/firefox.png",
-            "brave": "static/images/brave.svg",
-            "opera": "static/images/opera logo.png",
-            "whale": "static/images/whale.jpg",
-            "safari": "static/images/safari.png",
+            "chrome": get_resource_path("static/images/chrome.png"),
+            "edge": get_resource_path("static/images/edge.png"),
+            "firefox": get_resource_path("static/images/firefox.png"),
+            "brave": get_resource_path("static/images/brave.svg"),
+            "opera": get_resource_path("static/images/opera logo.png"),
+            "whale": get_resource_path("static/images/whale.jpg"),
+            "safari": get_resource_path("static/images/safari.png"),
         }
 
         # 브라우저 이름 소문자로 변환하여 매칭
         browser_key = browser_info.name.lower()
-        icon_src = icon_image_map.get(browser_key, "static/images/chrome.png")
+        icon_src = icon_image_map.get(browser_key, get_resource_path("static/images/chrome.png"))
 
         # Card content (아이콘을 이미지로 교체)
         content = ft.Column(

@@ -1,9 +1,9 @@
 @echo off
 REM ============================================================
-REM Privacy Eraser - Flet Build & Release Script
+REM Privacy Eraser - Flet Pack & Release Script
 REM ============================================================
 REM Automates the entire release process:
-REM 1. Build executable with Flet
+REM 1. Build single-file executable with Flet Pack
 REM 2. Create Git tag
 REM 3. Push to GitHub
 REM 4. Create GitHub Release with executable
@@ -13,7 +13,7 @@ setlocal enabledelayedexpansion
 
 echo.
 echo ============================================================
-echo Privacy Eraser - Build ^& Release Automation (Flet)
+echo Privacy Eraser - Build ^& Release Automation (Flet Pack)
 echo ============================================================
 echo.
 
@@ -30,6 +30,7 @@ if "%VERSION%"=="" (
 )
 
 echo Version: %VERSION%
+echo Tag: latest (always points to newest release)
 echo.
 
 REM ============================================================
@@ -47,18 +48,13 @@ if %errorlevel% neq 0 (
 )
 echo   [OK] Python found
 
-REM Check Flet and Flet CLI
+REM Check Flet
 python -c "import flet" >nul 2>&1
 if %errorlevel% neq 0 (
     echo [ERROR] Flet is missing. Installing...
     pip install flet
 )
-python -c "import flet_cli" >nul 2>&1
-if %errorlevel% neq 0 (
-    echo [ERROR] Flet CLI is missing. Installing...
-    pip install flet-cli
-)
-echo   [OK] Flet and Flet CLI available
+echo   [OK] Flet available
 
 REM Check GitHub CLI
 where gh >nul 2>&1
@@ -73,18 +69,22 @@ echo   [OK] GitHub CLI found
 echo.
 
 REM ============================================================
-REM Step 2: Build executable with Flet
+REM Step 2: Build single-file executable with Flet Pack
 REM ============================================================
-echo [Step 2/5] Building executable with Flet...
+echo [Step 2/5] Building single-file executable with Flet Pack...
 echo.
 
 REM Clean previous builds
-if exist "build" rmdir /s /q "build"
 if exist "dist" rmdir /s /q "dist"
 
-REM Build with Flet CLI
-REM All metadata is configured in pyproject.toml
-python -m flet_cli build windows
+REM Build with Flet Pack (PyInstaller-based, single file)
+uv run flet pack main.py ^
+    --name "PrivacyEraser" ^
+    --product-name "Privacy Eraser" ^
+    --product-version "%VERSION%" ^
+    --file-description "Privacy Eraser - Browser Data Cleaner" ^
+    --copyright "Copyright (C) 2025 seolcoding.com" ^
+    --add-data "static/images;static/images"
 
 if %errorlevel% neq 0 (
     echo [ERROR] Build failed!
@@ -93,48 +93,37 @@ if %errorlevel% neq 0 (
 )
 
 REM Verify executable exists
-if not exist "build\windows\privacy_eraser.exe" (
+if not exist "dist\PrivacyEraser.exe" (
     echo [ERROR] Executable is missing!
     pause
     exit /b 1
 )
 
-echo   [OK] Build successful
+echo   [OK] Build successful (single file)
 echo.
 
 REM ============================================================
-REM Step 3: Create and push Git tag
+REM Step 3: Create and push Git tag (always "latest")
 REM ============================================================
 echo [Step 3/5] Creating Git tag...
 echo.
 
-REM Check if tag already exists
-git rev-parse "v%VERSION%" >nul 2>&1
-if %errorlevel% equ 0 (
-    echo [WARNING] Tag v%VERSION% already exists!
-    set /p OVERWRITE="Overwrite tag? (y/n): "
-    if /i "!OVERWRITE!"=="y" (
-        git tag -d "v%VERSION%"
-        git push origin ":refs/tags/v%VERSION%" 2>nul
-        echo   [OK] Old tag deleted
-    ) else (
-        echo [ABORT] Tag already exists
-        pause
-        exit /b 1
-    )
-)
+REM Delete existing "latest" tag (locally and remotely)
+git tag -d "latest" 2>nul
+git push origin ":refs/tags/latest" 2>nul
+echo   [OK] Old "latest" tag deleted
 
-REM Create new tag
-git tag -a "v%VERSION%" -m "Release v%VERSION% - Flet UI"
+REM Create new "latest" tag
+git tag -a "latest" -m "Release v%VERSION% - Flet UI (Flutter)"
 if %errorlevel% neq 0 (
     echo [ERROR] Failed to create tag!
     pause
     exit /b 1
 )
-echo   [OK] Tag created: v%VERSION%
+echo   [OK] Tag created: latest (v%VERSION%)
 
-REM Push tag to GitHub
-git push origin "v%VERSION%"
+REM Push tag to GitHub (force update)
+git push origin "latest" --force
 if %errorlevel% neq 0 (
     echo [ERROR] Failed to push tag!
     pause
@@ -149,18 +138,24 @@ REM ============================================================
 echo [Step 4/5] Creating GitHub Release...
 echo.
 
+REM Delete existing "latest" release if it exists
+gh release delete "latest" --yes 2>nul
+echo   [OK] Old "latest" release deleted (if existed)
+
 REM Create release notes
-set RELEASE_NOTES=Release v%VERSION%^
+set RELEASE_NOTES=Privacy Eraser v%VERSION%^
 
 ^
 
-Flet-based UI with Material Design 3.^
+Flet (Flutter for Python) UI with Material Design 3^
 
 ^
 
-Features:^
+**Features:**^
 
-- Modern Flet UI framework^
+- Modern Flet/Flutter-based UI framework^
+
+- Single-file executable (no installation)^
 
 - Browser privacy data cleaning^
 
@@ -175,8 +170,8 @@ Features:^
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
 
 REM Create release with gh CLI
-gh release create "v%VERSION%" ^
-    "build\windows\privacy_eraser.exe" ^
+gh release create "latest" ^
+    "dist\PrivacyEraser.exe" ^
     --title "Privacy Eraser v%VERSION%" ^
     --notes "%RELEASE_NOTES%"
 
@@ -197,10 +192,11 @@ echo RELEASE COMPLETED SUCCESSFULLY!
 echo ============================================================
 echo.
 echo Version: %VERSION%
-echo Tag: v%VERSION%
-echo Executable: build\windows\privacy_eraser.exe
+echo Tag: latest (always points to newest)
+echo Executable: dist\PrivacyEraser.exe (single file)
+echo Framework: Flet (Flutter for Python)
 echo.
-echo GitHub Release: https://github.com/yourusername/Privacy-Eraser/releases/tag/v%VERSION%
+echo GitHub Release: https://github.com/yourusername/Privacy-Eraser/releases/latest
 echo.
 echo ============================================================
 echo.
