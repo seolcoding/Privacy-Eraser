@@ -26,6 +26,7 @@ from privacy_eraser.ui.core.data_config import (
     get_cleaner_options,
 )
 from privacy_eraser.ui.core.backup_manager import BackupManager
+from privacy_eraser.ui.core.schedule_manager import ScheduleManager, ScheduleScenario
 
 
 # ═════════════════════════════════════════════════════════════
@@ -506,7 +507,7 @@ def main(page: ft.Page):
             color="#FFFFFF",
             shape=ft.RoundedRectangleBorder(radius=19),
         ),
-        on_click=lambda e: show_schedule_dialog(),
+        on_click=lambda e: (logger.info("[DEBUG] 실행 예약 버튼 클릭됨"), show_schedule_dialog()),
     )
 
     # 버튼 레이아웃 (1행에 3개)
@@ -658,9 +659,7 @@ def main(page: ft.Page):
                     )
                 ],
             )
-            page.dialog = no_backup_dialog
-            no_backup_dialog.open = True
-            page.update()
+            page.open(no_backup_dialog)
             return
 
         # Create backup list
@@ -685,17 +684,13 @@ def main(page: ft.Page):
             ],
         )
 
-        page.dialog = undo_dialog
-        undo_dialog.open = True
-        page.update()
+        page.open(undo_dialog)
 
     def restore_backup(backup_dir: Path):
         """Restore selected backup"""
-        page.dialog.open = False
-        page.update()
-
         # Show progress
         progress_dialog = ft.AlertDialog(
+            modal=True,
             title=ft.Text("복원 중..."),
             content=ft.Column(
                 [ft.ProgressRing(), ft.Text("백업 복원 중...", size=14)],
@@ -703,9 +698,7 @@ def main(page: ft.Page):
                 spacing=16,
             ),
         )
-        page.dialog = progress_dialog
-        progress_dialog.open = True
-        page.update()
+        page.open(progress_dialog)
 
         # Restore in background
         def do_restore():
@@ -713,9 +706,8 @@ def main(page: ft.Page):
             success = backup_manager.restore_backup(backup_dir)
 
             # Close progress, show result
-            page.dialog.open = False
-
             result_dialog = ft.AlertDialog(
+                modal=True,
                 title=ft.Text("복원 완료" if success else "복원 실패"),
                 content=ft.Text(
                     "백업이 성공적으로 복원되었습니다!"
@@ -728,16 +720,13 @@ def main(page: ft.Page):
                     )
                 ],
             )
-            page.dialog = result_dialog
-            result_dialog.open = True
-            page.update()
+            page.open(result_dialog)
 
         threading.Thread(target=do_restore, daemon=True).start()
 
     def close_dialog(dialog):
         """Close dialog"""
-        dialog.open = False
-        page.update()
+        page.close(dialog)  # 올바른 Flet 문법 사용
 
     def start_cleaning():
         """Start cleaning process"""
@@ -754,136 +743,678 @@ def main(page: ft.Page):
                     )
                 ],
             )
-            page.dialog = warning_dialog
-            warning_dialog.open = True
-            page.update()
+            page.open(warning_dialog)
             return
 
         logger.info(f"Starting deletion for: {', '.join(selected)}")
         show_progress_dialog(selected)
 
     def show_schedule_dialog():
-        """예약 실행 설정 다이얼로그"""
-        # 시간 선택 필드
-        hour_field = ft.TextField(
-            label="시간 (0-23)",
-            value="0",
-            width=100,
-            keyboard_type=ft.KeyboardType.NUMBER,
-        )
-        minute_field = ft.TextField(
-            label="분 (0-59)",
-            value="0",
-            width=100,
-            keyboard_type=ft.KeyboardType.NUMBER,
+        """예약 관리 다이얼로그 (왼쪽: 폼, 오른쪽: 리스트)"""
+        schedule_manager = ScheduleManager()
+
+        # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        # 브라우저 칩 클래스
+        # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        class BrowserChip:
+            def __init__(self, name, icon_src, selected=True):
+                self.name = name
+                self.icon_src = icon_src
+                self.selected = selected
+
+                self.container = ft.Container(
+                    content=ft.Image(
+                        src=icon_src,
+                        width=20,
+                        height=20,
+                        fit=ft.ImageFit.CONTAIN,
+                        opacity=1.0 if selected else 0.4,
+                    ),
+                    width=36,
+                    height=36,
+                    bgcolor=AppColors.SURFACE,
+                    border=ft.border.all(
+                        2,
+                        AppColors.BORDER_SELECTED if selected else AppColors.BORDER
+                    ),
+                    border_radius=8,
+                    padding=6,
+                    on_click=self.toggle,
+                    tooltip=name,
+                )
+
+            def toggle(self, e):
+                self.selected = not self.selected
+                self.container.border = ft.border.all(
+                    2,
+                    AppColors.BORDER_SELECTED if self.selected else AppColors.BORDER
+                )
+                self.container.content.opacity = 1.0 if self.selected else 0.4
+                page.update()
+
+        # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        # 왼쪽: 폼 영역
+        # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+        # 편집 모드 추적
+        editing_scenario_id = None
+
+        # 폼 필드 (80% 크기)
+        name_field = ft.TextField(
+            label="시나리오 이름",
+            hint_text="예: 주말 정리",
+            width=280,
+            text_size=12,
         )
 
-        # 반복 설정
-        repeat_dropdown = ft.Dropdown(
-            label="반복",
-            width=150,
-            value="once",
+        description_field = ft.TextField(
+            label="설명 (선택사항)",
+            hint_text="시나리오 설명",
+            width=280,
+            multiline=True,
+            max_lines=2,
+            text_size=12,
+        )
+
+        schedule_type_dropdown = ft.Dropdown(
+            label="반복 주기",
+            width=280,
+            value="daily",
+            text_size=12,
             options=[
                 ft.dropdown.Option("once", "일회성"),
+                ft.dropdown.Option("hourly", "매시간"),
                 ft.dropdown.Option("daily", "매일"),
                 ft.dropdown.Option("weekly", "매주"),
+                ft.dropdown.Option("monthly", "매월"),
             ],
         )
 
-        # 브라우저 선택 체크박스
-        schedule_checkboxes = []
-        for browser_name in selected_browsers.keys():
-            cb = ft.Checkbox(label=browser_name, value=True)
-            schedule_checkboxes.append(cb)
-
-        schedule_dialog = ft.AlertDialog(
-            title=ft.Text("예약 실행 설정"),
-            content=ft.Column(
-                [
-                    ft.Text("실행 시간", weight=ft.FontWeight.BOLD),
-                    ft.Row([hour_field, ft.Text(":"), minute_field], spacing=8),
-                    ft.Container(height=16),
-                    repeat_dropdown,
-                    ft.Container(height=16),
-                    ft.Text("삭제할 브라우저", weight=ft.FontWeight.BOLD),
-                    ft.Column(schedule_checkboxes, spacing=8),
-                ],
-                tight=True,
-                width=400,
-                height=400,
-                scroll=ft.ScrollMode.AUTO,
-            ),
-            actions=[
-                ft.TextButton("취소", on_click=lambda e: close_dialog(schedule_dialog)),
-                ft.ElevatedButton(
-                    "예약하기",
-                    on_click=lambda e: create_schedule(
-                        hour_field.value,
-                        minute_field.value,
-                        repeat_dropdown.value,
-                        schedule_checkboxes,
-                        schedule_dialog,
-                    ),
-                ),
-            ],
+        hour_field = ft.TextField(
+            label="시간",
+            value="14",
+            width=64,
+            keyboard_type=ft.KeyboardType.NUMBER,
+            hint_text="0-23",
+            text_size=12,
         )
-        page.dialog = schedule_dialog
-        schedule_dialog.open = True
-        page.update()
 
-    def create_schedule(hour, minute, repeat_type, checkboxes, dialog):
-        """예약 작업 생성"""
-        try:
-            selected_for_schedule = [cb.label for cb in checkboxes if cb.value]
+        minute_field = ft.TextField(
+            label="분",
+            value="0",
+            width=64,
+            keyboard_type=ft.KeyboardType.NUMBER,
+            hint_text="0-59",
+            text_size=12,
+        )
 
-            if not selected_for_schedule:
-                error_dialog = ft.AlertDialog(
-                    title=ft.Text("브라우저 미선택"),
-                    content=ft.Text("최소 하나의 브라우저를 선택해주세요."),
-                    actions=[
-                        ft.TextButton(
-                            "확인", on_click=lambda e: close_dialog(error_dialog)
-                        )
-                    ],
-                )
-                page.dialog = error_dialog
-                error_dialog.open = True
-                page.update()
-                return
+        time_row = ft.Row(
+            [
+                hour_field,
+                ft.Text(":", size=20, weight=ft.FontWeight.BOLD),
+                minute_field,
+            ],
+            spacing=8,
+        )
 
-            dialog.open = False
-
-            # 예약 정보 표시
-            result_dialog = ft.AlertDialog(
-                title=ft.Text("예약 완료"),
-                content=ft.Text(
-                    f"✅ 예약이 설정되었습니다.\n\n"
-                    f"시간: {hour}:{minute}\n"
-                    f"반복: {repeat_type}\n"
-                    f"브라우저: {', '.join(selected_for_schedule)}\n\n"
-                    f"(실제 예약 기능은 구현 예정)"
-                ),
-                actions=[
-                    ft.TextButton(
-                        "확인", on_click=lambda e: close_dialog(result_dialog)
-                    )
-                ],
+        # 요일 선택 (weekly용, 80% 크기)
+        weekday_checkboxes = []
+        weekday_names = ["일", "월", "화", "수", "목", "금", "토"]
+        for i, day_name in enumerate(weekday_names):
+            cb = ft.Checkbox(
+                label=day_name,
+                value=False,
+                data=i,  # 0=일요일, 6=토요일
+                label_style=ft.TextStyle(size=11),
             )
-            page.dialog = result_dialog
-            result_dialog.open = True
+            weekday_checkboxes.append(cb)
+
+        weekday_row = ft.Row(
+            weekday_checkboxes,
+            spacing=8,
+            wrap=True,
+            visible=False,  # 기본 숨김
+        )
+
+        # 날짜 선택 (monthly용)
+        day_of_month_field = ft.TextField(
+            label="날짜",
+            value="1",
+            width=80,
+            keyboard_type=ft.KeyboardType.NUMBER,
+            hint_text="1-31",
+            text_size=12,
+            visible=False,  # 기본 숨김
+        )
+
+        # 스케줄 타입 변경 시 조건부 UI 업데이트
+        def on_schedule_type_change(e):
+            is_weekly = schedule_type_dropdown.value == "weekly"
+            is_monthly = schedule_type_dropdown.value == "monthly"
+
+            weekday_row.visible = is_weekly
+            day_of_month_field.visible = is_monthly
             page.update()
 
-        except Exception as e:
+        schedule_type_dropdown.on_change = on_schedule_type_change
+
+        # 브라우저 아이콘 매핑
+        icon_image_map = {
+            "chrome": get_resource_path("static/images/chrome.png"),
+            "edge": get_resource_path("static/images/edge.png"),
+            "firefox": get_resource_path("static/images/firefox.png"),
+            "brave": get_resource_path("static/images/brave.svg"),
+            "opera": get_resource_path("static/images/opera logo.png"),
+            "whale": get_resource_path("static/images/whale.jpg"),
+            "safari": get_resource_path("static/images/safari.png"),
+        }
+
+        # 브라우저 칩 생성
+        browser_chips = []
+        for browser_name in selected_browsers.keys():
+            browser_key = browser_name.lower()
+            icon_src = icon_image_map.get(browser_key, icon_image_map["chrome"])
+            chip = BrowserChip(browser_name, icon_src, selected=True)
+            browser_chips.append(chip)
+
+        browser_chips_row = ft.Row(
+            [chip.container for chip in browser_chips],
+            wrap=True,
+            spacing=8,
+            run_spacing=8,
+        )
+
+        # 옵션 칩 스타일 (한 줄에 3개)
+        class OptionChip:
+            def __init__(self, label, initial_value):
+                self.label = label
+                self.value = initial_value
+
+                self.container = ft.Container(
+                    content=ft.Text(
+                        label,
+                        size=10,
+                        color="#FFFFFF" if initial_value else AppColors.TEXT_SECONDARY,
+                        weight=ft.FontWeight.W_500,
+                    ),
+                    bgcolor=AppColors.PRIMARY if initial_value else AppColors.SURFACE,
+                    border=ft.border.all(1, AppColors.BORDER if not initial_value else AppColors.PRIMARY),
+                    border_radius=12,
+                    padding=ft.padding.symmetric(horizontal=10, vertical=4),
+                    on_click=self.toggle,
+                    ink=True,
+                )
+
+            def toggle(self, e):
+                self.value = not self.value
+                self.container.bgcolor = AppColors.PRIMARY if self.value else AppColors.SURFACE
+                self.container.border = ft.border.all(
+                    1, AppColors.PRIMARY if self.value else AppColors.BORDER
+                )
+                self.container.content.color = "#FFFFFF" if self.value else AppColors.TEXT_SECONDARY
+                page.update()
+
+        opt_bookmarks = OptionChip("북마크", delete_bookmarks)
+        opt_downloads = OptionChip("DL기록", delete_downloads)
+        opt_downloads_folder = OptionChip("DL파일", delete_downloads_folder)
+
+        options_row = ft.Row(
+            [opt_bookmarks.container, opt_downloads.container, opt_downloads_folder.container],
+            spacing=6,
+        )
+
+        # 폼 저장 버튼
+        def save_scenario(e):
+            nonlocal editing_scenario_id
+
+            # 검증
+            if not name_field.value or not name_field.value.strip():
+                show_error("시나리오 이름을 입력해주세요.")
+                return
+
+            try:
+                hour = int(hour_field.value)
+                minute = int(minute_field.value)
+                if not (0 <= hour <= 23) or not (0 <= minute <= 59):
+                    raise ValueError()
+            except:
+                show_error("시간 형식이 올바르지 않습니다. (시간: 0-23, 분: 0-59)")
+                return
+
+            selected_browser_list = [chip.name for chip in browser_chips if chip.selected]
+            if not selected_browser_list:
+                show_error("최소 하나의 브라우저를 선택해주세요.")
+                return
+
+            # 주별/월별 검증
+            weekdays_list = None
+            day_of_month_val = None
+
+            if schedule_type_dropdown.value == "weekly":
+                weekdays_list = [cb.data for cb in weekday_checkboxes if cb.value]
+                if not weekdays_list:
+                    show_error("최소 하나의 요일을 선택해주세요.")
+                    return
+
+            if schedule_type_dropdown.value == "monthly":
+                try:
+                    day_of_month_val = int(day_of_month_field.value)
+                    if not (1 <= day_of_month_val <= 31):
+                        raise ValueError()
+                except:
+                    show_error("날짜는 1-31 사이여야 합니다.")
+                    return
+
+            # 시나리오 생성 or 업데이트
+            time_str = f"{hour:02d}:{minute:02d}"
+
+            if editing_scenario_id:
+                # 업데이트
+                schedule_manager.update_schedule(
+                    editing_scenario_id,
+                    name=name_field.value.strip(),
+                    description=description_field.value.strip() if description_field.value else "",
+                    schedule_type=schedule_type_dropdown.value,
+                    time=time_str,
+                    weekdays=weekdays_list or [],
+                    day_of_month=day_of_month_val,
+                    browsers=selected_browser_list,
+                    delete_bookmarks=opt_bookmarks.value,
+                    delete_downloads=opt_downloads.value,
+                    delete_downloads_folder=opt_downloads_folder.value,
+                )
+                logger.info(f"Updated scenario: {editing_scenario_id}")
+            else:
+                # 생성
+                schedule_manager.create_schedule(
+                    name=name_field.value.strip(),
+                    description=description_field.value.strip() if description_field.value else "",
+                    schedule_type=schedule_type_dropdown.value,
+                    time=time_str,
+                    weekdays=weekdays_list,
+                    day_of_month=day_of_month_val,
+                    browsers=selected_browser_list,
+                    delete_bookmarks=opt_bookmarks.value,
+                    delete_downloads=opt_downloads.value,
+                    delete_downloads_folder=opt_downloads_folder.value,
+                )
+                logger.info(f"Created new scenario: {name_field.value}")
+
+            # 폼 리셋 & 리스트 새로고침
+            reset_form()
+            refresh_scenario_list()
+
+        def reset_form():
+            nonlocal editing_scenario_id
+            editing_scenario_id = None
+
+            name_field.value = ""
+            description_field.value = ""
+            schedule_type_dropdown.value = "daily"
+            hour_field.value = "14"
+            minute_field.value = "0"
+
+            for cb in weekday_checkboxes:
+                cb.value = False
+            weekday_row.visible = False
+
+            day_of_month_field.value = "1"
+            day_of_month_field.visible = False
+
+            for chip in browser_chips:
+                chip.selected = True
+                chip.container.border = ft.border.all(2, AppColors.BORDER_SELECTED)
+                chip.container.content.opacity = 1.0
+
+            opt_bookmarks.value = delete_bookmarks
+            opt_downloads.value = delete_downloads
+            opt_downloads_folder.value = delete_downloads_folder
+
+            save_button.text = "저장"
+            cancel_button.visible = False
+
+            page.update()
+
+        def show_error(message: str):
             error_dialog = ft.AlertDialog(
-                title=ft.Text("오류 발생"),
-                content=ft.Text(f"예약 설정 중 오류가 발생했습니다:\n{str(e)}"),
+                modal=True,
+                title=ft.Text("입력 오류"),
+                content=ft.Text(message),
                 actions=[
                     ft.TextButton("확인", on_click=lambda e: close_dialog(error_dialog))
                 ],
             )
-            page.dialog = error_dialog
-            error_dialog.open = True
+            page.open(error_dialog)
+
+        save_button = ft.ElevatedButton(
+            "저장",
+            icon=ft.Icons.SAVE,
+            on_click=save_scenario,
+        )
+
+        cancel_button = ft.OutlinedButton(
+            "취소",
+            icon=ft.Icons.CANCEL,
+            on_click=lambda e: reset_form(),
+            visible=False,
+        )
+
+        form_buttons = ft.Row(
+            [save_button, cancel_button],
+            spacing=12,
+        )
+
+        # 폼 필드 영역 (스크롤 가능)
+        form_fields = ft.Column(
+            [
+                name_field,
+                description_field,
+                ft.Container(height=6),
+                schedule_type_dropdown,
+                time_row,
+                weekday_row,
+                day_of_month_field,
+                ft.Container(height=6),
+                ft.Text("브라우저 선택", size=11, weight=ft.FontWeight.W_600),
+                browser_chips_row,
+                ft.Container(height=6),
+                ft.Text("옵션", size=11, weight=ft.FontWeight.W_600),
+                options_row,
+            ],
+            spacing=6,
+            scroll=ft.ScrollMode.AUTO,
+            expand=True,
+        )
+
+        # 폼 전체 (제목 + 스크롤 영역 + 고정 버튼)
+        form_column = ft.Column(
+            [
+                ft.Text("시나리오 설정", size=13, weight=ft.FontWeight.BOLD),
+                ft.Divider(height=1, color=AppColors.BORDER),
+                form_fields,
+                ft.Divider(height=1, color=AppColors.BORDER),
+                form_buttons,
+            ],
+            spacing=6,
+            width=310,
+        )
+
+        # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        # 오른쪽: 리스트 영역
+        # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+        scenario_list_column = ft.Column(
+            spacing=8,
+            scroll=ft.ScrollMode.AUTO,
+        )
+
+        def format_schedule_info(scenario: ScheduleScenario) -> str:
+            """스케줄 정보를 문자열로 포맷"""
+            type_map = {
+                "once": "일회성",
+                "hourly": "매시간",
+                "daily": "매일",
+                "weekly": "매주",
+                "monthly": "매월",
+            }
+
+            schedule_str = f"{type_map.get(scenario.schedule_type, scenario.schedule_type)} {scenario.time}"
+
+            if scenario.schedule_type == "weekly" and scenario.weekdays:
+                weekday_names_kr = ["일", "월", "화", "수", "목", "금", "토"]
+                days_str = ", ".join([weekday_names_kr[d] for d in sorted(scenario.weekdays)])
+                schedule_str += f" ({days_str})"
+
+            if scenario.schedule_type == "monthly" and scenario.day_of_month:
+                schedule_str += f" (매월 {scenario.day_of_month}일)"
+
+            return schedule_str
+
+        def create_scenario_card(scenario: ScheduleScenario):
+            """시나리오 카드 생성"""
+
+            # 토글 스위치
+            toggle_switch = ft.Switch(
+                value=scenario.enabled,
+                on_change=lambda e: toggle_scenario(scenario.id, e.control.value),
+            )
+
+            # 편집 버튼
+            edit_btn = ft.IconButton(
+                icon=ft.Icons.EDIT,
+                icon_size=18,
+                tooltip="편집",
+                on_click=lambda e: edit_scenario(scenario),
+            )
+
+            # 삭제 버튼
+            delete_btn = ft.IconButton(
+                icon=ft.Icons.DELETE,
+                icon_size=18,
+                icon_color=AppColors.DANGER,
+                tooltip="삭제",
+                on_click=lambda e: confirm_delete_scenario(scenario),
+            )
+
+            # 카드 내용
+            card_content = ft.Container(
+                content=ft.Column(
+                    [
+                        ft.Row(
+                            [
+                                ft.Column(
+                                    [
+                                        ft.Text(
+                                            scenario.name,
+                                            size=14,
+                                            weight=ft.FontWeight.BOLD,
+                                            color=AppColors.TEXT_PRIMARY,
+                                        ),
+                                        ft.Text(
+                                            format_schedule_info(scenario),
+                                            size=12,
+                                            color=AppColors.TEXT_SECONDARY,
+                                        ),
+                                        ft.Text(
+                                            f"브라우저: {', '.join(scenario.browsers)}",
+                                            size=11,
+                                            color=AppColors.TEXT_HINT,
+                                        ),
+                                    ],
+                                    spacing=2,
+                                    expand=True,
+                                ),
+                                ft.Column(
+                                    [
+                                        toggle_switch,
+                                        ft.Row(
+                                            [edit_btn, delete_btn],
+                                            spacing=4,
+                                        ),
+                                    ],
+                                    horizontal_alignment=ft.CrossAxisAlignment.END,
+                                    spacing=4,
+                                ),
+                            ],
+                            alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                        ),
+                    ],
+                    spacing=4,
+                ),
+                bgcolor=AppColors.SURFACE if scenario.enabled else "#F9F9F9",
+                border=ft.border.all(
+                    1,
+                    AppColors.BORDER_SELECTED if scenario.enabled else AppColors.BORDER
+                ),
+                border_radius=8,
+                padding=12,
+            )
+
+            return card_content
+
+        def refresh_scenario_list():
+            """시나리오 리스트 새로고침"""
+            scenarios = schedule_manager.get_all_schedules()
+            scenario_list_column.controls.clear()
+
+            if not scenarios:
+                scenario_list_column.controls.append(
+                    ft.Container(
+                        content=ft.Text(
+                            "등록된 시나리오가 없습니다.\n왼쪽에서 새 시나리오를 만드세요.",
+                            size=13,
+                            color=AppColors.TEXT_HINT,
+                            text_align=ft.TextAlign.CENTER,
+                        ),
+                        padding=32,
+                        alignment=ft.alignment.center,
+                    )
+                )
+            else:
+                for scenario in scenarios:
+                    scenario_list_column.controls.append(create_scenario_card(scenario))
+
             page.update()
+
+        def toggle_scenario(scenario_id: str, new_value: bool):
+            """시나리오 활성화/비활성화"""
+            schedule_manager.update_schedule(scenario_id, enabled=new_value)
+            logger.info(f"Toggled scenario {scenario_id}: {new_value}")
+            refresh_scenario_list()
+
+        def edit_scenario(scenario: ScheduleScenario):
+            """시나리오 편집"""
+            nonlocal editing_scenario_id
+            editing_scenario_id = scenario.id
+
+            # 폼에 값 채우기
+            name_field.value = scenario.name
+            description_field.value = scenario.description or ""
+            schedule_type_dropdown.value = scenario.schedule_type
+
+            hour, minute = scenario.time.split(":")
+            hour_field.value = str(int(hour))
+            minute_field.value = str(int(minute))
+
+            # 조건부 UI 표시
+            weekday_row.visible = scenario.schedule_type == "weekly"
+            day_of_month_field.visible = scenario.schedule_type == "monthly"
+
+            # 요일 설정
+            if scenario.schedule_type == "weekly":
+                for cb in weekday_checkboxes:
+                    cb.value = cb.data in scenario.weekdays
+
+            # 날짜 설정
+            if scenario.schedule_type == "monthly" and scenario.day_of_month:
+                day_of_month_field.value = str(scenario.day_of_month)
+
+            # 브라우저 설정
+            for chip in browser_chips:
+                chip.selected = chip.name in scenario.browsers
+                chip.container.border = ft.border.all(
+                    2,
+                    AppColors.BORDER_SELECTED if chip.selected else AppColors.BORDER
+                )
+                chip.container.content.opacity = 1.0 if chip.selected else 0.4
+
+            # 옵션 설정
+            opt_bookmarks.value = scenario.delete_bookmarks
+            opt_downloads.value = scenario.delete_downloads
+            opt_downloads_folder.value = scenario.delete_downloads_folder
+
+            # 버튼 변경
+            save_button.text = "수정"
+            cancel_button.visible = True
+
+            page.update()
+            logger.info(f"Editing scenario: {scenario.name}")
+
+        def confirm_delete_scenario(scenario: ScheduleScenario):
+            """시나리오 삭제 확인"""
+            confirm_dialog = ft.AlertDialog(
+                modal=True,
+                title=ft.Text("시나리오 삭제"),
+                content=ft.Text(f"'{scenario.name}' 시나리오를 삭제하시겠습니까?"),
+                actions=[
+                    ft.TextButton("취소", on_click=lambda e: close_dialog(confirm_dialog)),
+                    ft.ElevatedButton(
+                        "삭제",
+                        bgcolor=AppColors.DANGER,
+                        color="#FFFFFF",
+                        on_click=lambda e: delete_scenario(scenario.id, confirm_dialog),
+                    ),
+                ],
+            )
+            page.open(confirm_dialog)
+
+        def delete_scenario(scenario_id: str, confirm_dialog):
+            """시나리오 삭제"""
+            success = schedule_manager.delete_schedule(scenario_id)
+            close_dialog(confirm_dialog)
+
+            if success:
+                logger.info(f"Deleted scenario: {scenario_id}")
+                refresh_scenario_list()
+            else:
+                show_error("시나리오 삭제에 실패했습니다.")
+
+        # 리스트 영역 전체
+        list_container = ft.Container(
+            content=ft.Column(
+                [
+                    ft.Text("등록된 시나리오", size=16, weight=ft.FontWeight.BOLD),
+                    ft.Divider(height=1, color=AppColors.BORDER),
+                    scenario_list_column,
+                ],
+                spacing=8,
+            ),
+            expand=True,
+        )
+
+        # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        # 다이얼로그 레이아웃 (왼쪽/오른쪽 분할)
+        # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+        dialog_content = ft.Row(
+            [
+                ft.Container(
+                    content=form_column,
+                    padding=16,
+                ),
+                ft.VerticalDivider(width=1, color=AppColors.BORDER),
+                ft.Container(
+                    content=list_container,
+                    padding=16,
+                    expand=True,
+                ),
+            ],
+            spacing=0,
+            expand=True,
+        )
+
+        schedule_dialog = ft.AlertDialog(
+            modal=True,
+            title=ft.Text("예약 관리", size=18, weight=ft.FontWeight.BOLD),
+            content=ft.Container(
+                content=dialog_content,
+                width=900,
+                height=550,
+            ),
+            actions=[
+                ft.TextButton(
+                    "닫기",
+                    on_click=lambda e: close_dialog(schedule_dialog),
+                ),
+            ],
+        )
+
+        # 초기 리스트 로드
+        refresh_scenario_list()
+
+        # 다이얼로그 표시
+        page.open(schedule_dialog)
+        logger.info("Schedule management dialog opened")
 
     def show_progress_dialog(selected_browsers_list: list[str]):
         """Show progress dialog and start cleaning"""
@@ -904,9 +1435,7 @@ def main(page: ft.Page):
             title=ft.Text("개인정보 삭제 중"), content=progress_content, modal=True
         )
 
-        page.dialog = progress_dialog
-        progress_dialog.open = True
-        page.update()
+        page.open(progress_dialog)
 
         # Callbacks for cleaner worker
         def on_progress(file_path: str, file_size: int):
