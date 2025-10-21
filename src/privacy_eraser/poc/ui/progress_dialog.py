@@ -30,12 +30,20 @@ class ProgressDialog(QDialog):
         self.total_size = 0
         self.deleted_files = 0
         self.deleted_size = 0
+        self.is_started = False  # 시작 여부
+        self.is_completed = False  # 완료 여부
 
         # 카운터 애니메이션
         self.counter_animation_timer = QTimer()
         self.counter_animation_timer.timeout.connect(self.animate_counter)
         self.animated_files = 0
         self.animated_size = 0
+
+        # 스피너 애니메이션 (진행 중 표시)
+        self.spinner_timer = QTimer()
+        self.spinner_timer.timeout.connect(self.update_spinner)
+        self.spinner_frame = 0
+        self.spinner_chars = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
 
         self.setup_ui()
         self.apply_styles()
@@ -138,7 +146,8 @@ class ProgressDialog(QDialog):
     def set_total_files(self, total: int) -> None:
         """전체 파일 개수 설정"""
         self.total_files = total
-        self.progress_bar.setMaximum(total)
+        # 프로그레스 바는 항상 0-100 백분율로 동작
+        self.progress_bar.setMaximum(100)
         self.update_counter()
 
     def set_total_size(self, total: int) -> None:
@@ -236,21 +245,65 @@ class ProgressDialog(QDialog):
         if self.animated_files >= self.target_files and self.animated_size >= self.target_size:
             self.counter_animation_timer.stop()
 
+    def start_cleaning(self) -> None:
+        """삭제 시작 - 준비 중 상태 표시"""
+        self.is_started = True
+        self.status_label.setText("🔍 삭제 대상 파일을 검색하는 중...")
+        self.status_label.setStyleSheet(f"color: {Colors.PRIMARY};")
+
+        # 스피너 애니메이션 시작
+        self.spinner_timer.start(100)  # 100ms마다 업데이트
+
+    def update_spinner(self) -> None:
+        """스피너 애니메이션 업데이트"""
+        if self.is_completed:
+            self.spinner_timer.stop()
+            return
+
+        # 스피너 문자 회전
+        spinner = self.spinner_chars[self.spinner_frame % len(self.spinner_chars)]
+        self.spinner_frame += 1
+
+        # 상태 메시지 업데이트 (스피너 포함)
+        if not self.total_files:
+            self.status_label.setText(f"{spinner} 삭제 대상 파일을 검색하는 중...")
+        else:
+            self.status_label.setText(f"{spinner} 개인정보를 안전하게 삭제하는 중...")
+
     def show_completion(self, stats: CleaningStats) -> None:
         """완료 결과 표시"""
-        self.status_label.setText(f"✓ 삭제 완료! ({stats.duration:.1f}초)")
-        self.status_label.setStyleSheet(f"color: {Colors.SUCCESS};")
+        self.is_completed = True
+        self.spinner_timer.stop()
+
+        # 큰 체크마크와 성공 메시지
+        self.status_label.setText(f"✅ 삭제 완료! ({stats.duration:.1f}초 소요)")
+        self.status_label.setStyleSheet(f"color: {Colors.SUCCESS}; font-size: 18px; font-weight: bold;")
 
         # 최종 통계
         self.counter_label.setText(
-            f"삭제된 파일: {stats.deleted_files} / {stats.total_files}"
+            f"✓ 삭제된 파일: {stats.deleted_files} / {stats.total_files}"
         )
+        self.counter_label.setStyleSheet(f"color: {Colors.SUCCESS};")
+
         self.size_label.setText(
-            f"삭제된 용량: {stats.deleted_size_mb:.1f} MB / {stats.total_size_mb:.1f} MB"
+            f"✓ 삭제된 용량: {stats.deleted_size_mb:.1f} MB / {stats.total_size_mb:.1f} MB"
         )
+        self.size_label.setStyleSheet(f"color: {Colors.SUCCESS};")
 
         # 프로그레스 바 완성
         self.progress_bar.setValue(100)
+        self.progress_bar.setStyleSheet(f"""
+        QProgressBar {{
+            border: none;
+            border-radius: 4px;
+            background-color: {Colors.SURFACE_VARIANT};
+            height: 8px;
+        }}
+        QProgressBar::chunk {{
+            background-color: {Colors.SUCCESS};
+            border-radius: 4px;
+        }}
+        """)
 
     def show_error(self, error_msg: str) -> None:
         """에러 표시"""

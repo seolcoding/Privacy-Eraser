@@ -137,3 +137,83 @@ def collect_programs(probes: list[ProgramProbe]) -> list[dict[str, str]]:
     return rows
 
 
+def detect_browsers() -> list[dict[str, str]]:
+    """주요 브라우저 감지 (Windows)
+
+    Returns:
+        감지된 브라우저 정보 리스트
+        각 항목: {"name": str, "present": "yes"|"no", "running": "yes"|"no", "source": str}
+    """
+    # 브라우저 probe 정의
+    browser_probes = [
+        ProgramProbe(
+            name="Chrome",
+            registry_keys=(
+                r"HKLM\SOFTWARE\Google\Chrome",
+                r"HKCU\SOFTWARE\Google\Chrome",
+            ),
+            file_patterns=(
+                r"%ProgramFiles%\Google\Chrome\Application\chrome.exe",
+                r"%ProgramFiles(x86)%\Google\Chrome\Application\chrome.exe",
+                r"%LOCALAPPDATA%\Google\Chrome\Application\chrome.exe",
+            ),
+            process_names=("chrome.exe",),
+        ),
+        ProgramProbe(
+            name="Edge",
+            registry_keys=(
+                r"HKLM\SOFTWARE\Microsoft\Edge",
+                r"HKCU\SOFTWARE\Microsoft\Edge",
+            ),
+            file_patterns=(
+                r"%ProgramFiles%\Microsoft\Edge\Application\msedge.exe",
+                r"%ProgramFiles(x86)%\Microsoft\Edge\Application\msedge.exe",
+            ),
+            process_names=("msedge.exe",),
+        ),
+        ProgramProbe(
+            name="Firefox",
+            registry_keys=(
+                r"HKLM\SOFTWARE\Mozilla\Mozilla Firefox",
+                r"HKCU\SOFTWARE\Mozilla\Mozilla Firefox",
+            ),
+            file_patterns=(
+                r"%ProgramFiles%\Mozilla Firefox\firefox.exe",
+                r"%ProgramFiles(x86)%\Mozilla Firefox\firefox.exe",
+            ),
+            process_names=("firefox.exe",),
+        ),
+        ProgramProbe(
+            name="Brave",
+            file_patterns=(
+                r"%LOCALAPPDATA%\BraveSoftware\Brave-Browser\Application\brave.exe",
+                r"%ProgramFiles%\BraveSoftware\Brave-Browser\Application\brave.exe",
+            ),
+            process_names=("brave.exe",),
+        ),
+        ProgramProbe(
+            name="Opera",
+            registry_keys=(
+                r"HKLM\SOFTWARE\Opera Software",
+                r"HKCU\SOFTWARE\Opera Software",
+            ),
+            file_patterns=(
+                r"%ProgramFiles%\Opera\launcher.exe",
+                r"%ProgramFiles(x86)%\Opera\launcher.exe",
+                r"%LOCALAPPDATA%\Programs\Opera\launcher.exe",
+            ),
+            process_names=("opera.exe",),
+        ),
+        ProgramProbe(
+            name="Vivaldi",
+            file_patterns=(
+                r"%LOCALAPPDATA%\Vivaldi\Application\vivaldi.exe",
+                r"%ProgramFiles%\Vivaldi\Application\vivaldi.exe",
+            ),
+            process_names=("vivaldi.exe",),
+        ),
+    ]
+
+    return collect_programs(browser_probes)
+
+

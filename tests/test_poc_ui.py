@@ -319,9 +319,9 @@ class TestDataConfig:
         """브라우저 아이콘 조회 테스트"""
         from privacy_eraser.poc.core.data_config import get_browser_icon
 
-        assert get_browser_icon("chrome") == "🌐"
-        assert get_browser_icon("firefox") == "🦊"
-        assert get_browser_icon("brave") == "🦁"
+        assert get_browser_icon("chrome") == "fa5b.chrome"
+        assert get_browser_icon("firefox") == "fa5b.firefox"
+        assert get_browser_icon("brave") == "fa5s.shield-alt"
 
     def test_get_browser_color(self):
         """브라우저 색상 조회 테스트"""
@@ -376,17 +376,17 @@ class TestStyles:
         """타이포그래피 정의 테스트"""
         from privacy_eraser.poc.ui.styles import Typography
 
-        assert Typography.SIZE_H2 == 24
-        assert Typography.SIZE_BODY == 14
+        assert Typography.SIZE_H2 == 28  # 24 → 28
+        assert Typography.SIZE_BODY == 16  # 14 → 16
         assert Typography.WEIGHT_BOLD == 700
 
     def test_sizes_defined(self):
         """크기 정의 테스트"""
         from privacy_eraser.poc.ui.styles import Sizes
 
-        assert Sizes.CARD_WIDTH == 150
+        assert Sizes.CARD_WIDTH == 160  # 150 → 160
         assert Sizes.BUTTON_HEIGHT == 48
-        assert Sizes.MAIN_WINDOW_WIDTH == 850
+        assert Sizes.MAIN_WINDOW_WIDTH == 700  # 850 → 700
 
 
 class TestCleanerWorkerMocked:
