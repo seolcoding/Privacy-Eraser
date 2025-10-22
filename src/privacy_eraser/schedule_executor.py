@@ -121,9 +121,7 @@ def execute_prod_mode(scenario: ScheduleScenario) -> dict:
     start_time = time.time()
 
     # Use the same logic as FletCleanerWorker but synchronously
-    from privacy_eraser.ui.core.data_config import get_cleaner_options, get_browser_xml_path
-    from privacy_eraser.cleanerml_loader import load_cleanerml
-    import glob as glob_module
+    from privacy_eraser.ui.core.data_config import get_cleaner_options
 
     total_files = 0
     deleted_files = 0
@@ -189,7 +187,7 @@ def execute_prod_mode(scenario: ScheduleScenario) -> dict:
 def _get_browser_files(browser_name: str, options: list[str]) -> list[str]:
     """Get files for specific browser"""
     from privacy_eraser.ui.core.data_config import get_browser_xml_path
-    from privacy_eraser.cleanerml_loader import load_cleanerml
+    from privacy_eraser.cleanerml_loader import load_cleaner_options_from_file
     import glob as glob_module
 
     files = []
@@ -200,16 +198,18 @@ def _get_browser_files(browser_name: str, options: list[str]) -> list[str]:
             logger.warning(f"CleanerML path not found: {browser_name}")
             return files
 
-        cleaner_def = load_cleanerml(xml_path)
+        cleaner_options = load_cleaner_options_from_file(xml_path)
 
-        for option in options:
+        for option_id in options:
             try:
-                actions = cleaner_def.get_actions(option)
-                for action in actions:
-                    expanded = _expand_path(action.path)
-                    files.extend(expanded)
+                # Find matching CleanerOption by ID
+                matching_option = next((opt for opt in cleaner_options if opt.id == option_id), None)
+                if matching_option:
+                    for action in matching_option.actions:
+                        expanded = _expand_path(action.path)
+                        files.extend(expanded)
             except Exception as e:
-                logger.debug(f"Failed to process option {option}: {e}")
+                logger.debug(f"Failed to process option {option_id}: {e}")
 
     except Exception as e:
         logger.warning(f"Failed to load CleanerML for {browser_name}: {e}")
@@ -224,7 +224,14 @@ def _expand_path(path: str) -> list[str]:
     expanded_files = []
 
     try:
-        expanded = os.path.expandvars(path)
+        # Normalize path separators for Windows (/ -> \)
+        normalized_path = path.replace('/', os.sep)
+
+        # Expand environment variables
+        expanded = os.path.expandvars(normalized_path)
+
+        # Normalize path (resolve .., ., remove duplicate separators)
+        expanded = os.path.normpath(expanded)
 
         if "*" in expanded or "?" in expanded:
             matched = glob_module.glob(expanded, recursive=True)

@@ -372,7 +372,14 @@ class FletCleanerWorker(threading.Thread):
         expanded_files = []
 
         try:
-            expanded = os.path.expandvars(path)
+            # Normalize path separators for Windows (/ -> \)
+            normalized_path = path.replace('/', os.sep)
+
+            # Expand environment variables
+            expanded = os.path.expandvars(normalized_path)
+
+            # Normalize path (resolve .., ., remove duplicate separators)
+            expanded = os.path.normpath(expanded)
 
             if "*" in expanded or "?" in expanded:
                 matched = glob.glob(expanded, recursive=True)
