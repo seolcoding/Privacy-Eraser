@@ -92,18 +92,28 @@ if %errorlevel% neq 0 (
 )
 echo   [OK] Dependencies synced
 
-REM Clean previous builds
+REM Clean previous builds (both root and src)
 if exist "build\windows" rmdir /s /q "build\windows"
+if exist "src\build\windows" rmdir /s /q "src\build\windows"
 
 REM Build with Flet Build (Flutter-based, uses pyproject.toml settings)
-REM Exclude unnecessary files to reduce build size (also set in pyproject.toml)
-uv run flet build windows --exclude test_data .git .venv references .claude .coverage
+REM Build from src/ directory to minimize package size (only includes src/)
+cd src
+uv run flet build windows
 
 if %errorlevel% neq 0 (
     echo [ERROR] Build failed!
+    cd ..
     pause
     exit /b 1
 )
+
+REM Move build output to project root
+if exist "build\windows" (
+    echo   Moving build output to project root...
+    move "build\windows" "..\build\windows" >nul
+)
+cd ..
 
 REM Verify build output exists
 if not exist "build\windows" (
