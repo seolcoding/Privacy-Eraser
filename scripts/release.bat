@@ -173,12 +173,11 @@ if not exist "RELEASE_NOTES.md" (
 echo   [OK] RELEASE_NOTES.md found
 
 REM Create release with gh CLI (using RELEASE_NOTES.md)
-REM Use --target to specify the commit/branch explicitly
+REM Tag already exists and points to current commit
 gh release create "latest" ^
     "dist\PrivacyEraser.exe" ^
     --title "Privacy Eraser v%VERSION%" ^
-    --notes-file "RELEASE_NOTES.md" ^
-    --target "latest"
+    --notes-file "RELEASE_NOTES.md"
 
 if %errorlevel% neq 0 (
     echo [ERROR] Failed to create GitHub release!
