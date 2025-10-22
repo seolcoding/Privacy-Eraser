@@ -24,20 +24,76 @@
 - Flet 코드 작성 전에는 **반드시** `ai-docs/flet.md`를 먼저 읽으세요
 - 새로운 라이브러리 도입 시 ai-docs에 문서를 추가하세요
 
-## 🚀 빌드 & 릴리즈 프로세스 (Flet Pack)
+## 🚀 빌드 & 릴리즈 프로세스
 
-### 자동 빌드 & 릴리즈 (권장 ⭐)
+### 두 가지 빌드 방식 비교
 
-**`scripts/release.bat`** 스크립트를 사용하면 빌드부터 릴리즈까지 자동화됩니다.
+| | **Flet Build (Flutter)** ⭐ | **Flet Pack (PyInstaller)** |
+|---|---|---|
+| **권장도** | 권장 | 선택적 |
+| **기반 기술** | Flutter SDK (네이티브) | PyInstaller (Python) |
+| **빌드 결과** | ZIP (onedir 폴더) | 단일 EXE 파일 |
+| **오탐률** | 낮음 (네이티브 컴파일) | 높음 (셀프-추출 패턴) |
+| **빌드 속도** | 중간 (첫 빌드 느림) | 빠름 |
+| **실행 성능** | 빠름 | 보통 |
+| **설치 요구** | Flutter SDK | PyInstaller |
+| **배포 형태** | ZIP 압축 해제 필요 | 단일 파일 실행 |
+
+**⚠️ 중요: Windows Defender 오탐 방지**
+- **Flet Build (Flutter)** 방식이 오탐률이 훨씬 낮습니다
+- PyInstaller의 셀프-추출 패턴은 바이러스로 오인되기 쉽습니다
+- 코드 서명 없이 배포 시 **Flet Build** 강력 권장
+
+---
+
+### 자동 빌드 & 릴리즈 (Flet Build - 권장 ⭐)
+
+**`scripts/release_flutter.bat`** 스크립트를 사용하면 Flutter 빌드부터 릴리즈까지 자동화됩니다.
 
 #### 사용법
 
 ```bash
 # 버전을 인자로 전달
-scripts\release.bat 2.0.1
+scripts\release_flutter.bat 2.0.1
 
 # 또는 실행 후 버전 입력
-scripts\release.bat
+scripts\release_flutter.bat
+```
+
+#### 스크립트가 자동으로 수행하는 작업
+
+1. ✅ 버전 입력 (또는 인자로 전달)
+2. ✅ 의존성 확인 (Python, Flet, Flutter SDK, gh CLI)
+3. ✅ **Flutter 빌드** (Flet Build - 네이티브 컴파일)
+4. ✅ ZIP 압축 및 SHA256 해시 생성
+5. ✅ Git `latest` 태그 생성 및 푸시
+6. ✅ GitHub Release 생성 및 ZIP 업로드
+
+**Requirements:**
+- Python 3.12+
+- Flet (`pip install flet`)
+- Flutter SDK (https://docs.flutter.dev/get-started/install/windows)
+- uv (`pip install uv` 또는 https://github.com/astral-sh/uv)
+- GitHub CLI (`gh`) 설치: https://cli.github.com/
+
+**주요 특징:**
+- 🟢 **낮은 오탐률**: 네이티브 컴파일로 바이러스 오탐 최소화
+- 📦 **ZIP 배포**: `PrivacyEraser-v2.0.0-win-x64.zip`
+- 🔒 **SHA256 해시**: 무결성 검증 파일 포함
+- 🏷️ **`latest` 태그**: 항상 최신 릴리스를 가리킴
+- 🚀 **Flutter 기반**: Material Design 3 UI, 빠른 실행 속도
+
+---
+
+### 대안: 단일 파일 빌드 (Flet Pack - PyInstaller)
+
+**주의:** Windows Defender가 바이러스로 오탐할 가능성이 높습니다. 코드 서명 없이는 권장하지 않습니다.
+
+**`scripts/release.bat`** 스크립트 사용:
+
+```bash
+# 버전을 인자로 전달
+scripts\release.bat 2.0.1
 ```
 
 #### 스크립트가 자동으로 수행하는 작업
@@ -45,20 +101,18 @@ scripts\release.bat
 1. ✅ 버전 입력 (또는 인자로 전달)
 2. ✅ 의존성 확인 (Python, Flet, gh CLI)
 3. ✅ **단일 파일 EXE 빌드** (Flet Pack - PyInstaller 기반)
-4. ✅ Git `latest` 태그 생성 및 푸시 (항상 최신 버전 가리킴)
+4. ✅ Git `latest` 태그 생성 및 푸시
 5. ✅ GitHub Release 생성 및 단일 EXE 업로드
-
-**Requirements:**
-- Python 3.12+
-- Flet (`pip install flet`)
-- uv (`pip install uv` 또는 https://github.com/astral-sh/uv)
-- GitHub CLI (`gh`) 설치: https://cli.github.com/
 
 **주요 특징:**
 - 🎯 **단일 파일 배포**: `dist/PrivacyEraser.exe` 하나만 배포
-- 🏷️ **`latest` 태그**: 항상 최신 릴리스를 가리킴 (버전 태그 불필요)
+- 🔴 **높은 오탐률**: PyInstaller 패턴으로 인한 바이러스 오탐 가능
 - 🖼️ **이미지 포함**: `static/images` 자동 번들링
-- 🚀 **Flet/Flutter 기반**: Material Design 3 UI
+
+**오탐 해결 방법:**
+1. 코드 서명 인증서 구매 (DigiCert/Sectigo, ~$100-300/년)
+2. Flet Build (Flutter) 방식으로 전환 (권장)
+3. Microsoft에 오탐 신고 (시간 소요)
 
 ---
 
@@ -67,16 +121,12 @@ scripts\release.bat
 빌드만 필요한 경우:
 
 ```bash
-# 단일 파일 EXE 빌드 (Flet Pack)
-scripts\build_pack.bat
+# Flutter 빌드 (권장)
+uv run flet build windows
 
-# 또는 직접 실행
+# PyInstaller 빌드 (오탐 위험)
 uv run flet pack main.py --name "PrivacyEraser" --add-data "static/images;static/images"
 ```
-
-**두 가지 빌드 방식:**
-1. **Flet Pack** (권장): 단일 exe 파일, PyInstaller 기반
-2. **Flet Build**: 폴더 형태, Flutter SDK 기반, 더 빠름
 
 ---
 

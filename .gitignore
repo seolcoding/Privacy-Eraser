@@ -57,3 +57,4 @@ debug_*.py
 *.zip
 
 bleachbit/
+test_data/**

@@ -1,42 +1,26 @@
 @echo off
 REM ============================================================
-REM Privacy Eraser - Flet Pack & Release Script
-REM ============================================================
-REM DEPRECATED: This script uses PyInstaller (Flet Pack)
-REM RECOMMENDED: Use scripts\release_flutter.bat instead
+REM Privacy Eraser - Flet Build & Release Script (Flutter)
 REM ============================================================
 REM Automates the entire release process:
-REM 1. Build single-file executable with Flet Pack
-REM 2. Create Git tag
-REM 3. Push to GitHub
-REM 4. Create GitHub Release with executable
+REM 1. Build with Flutter SDK (flet build windows)
+REM 2. Create ZIP archive
+REM 3. Create Git tag
+REM 4. Push to GitHub
+REM 5. Create GitHub Release with ZIP
+REM ============================================================
+REM Advantages over PyInstaller:
+REM - Native Flutter compilation (lower false-positive rate)
+REM - Better performance
+REM - Modern app structure
 REM ============================================================
 
 setlocal enabledelayedexpansion
 
 echo.
 echo ============================================================
-echo Privacy Eraser - Build ^& Release Automation (Flet Pack)
+echo Privacy Eraser - Build ^& Release (Flet/Flutter)
 echo ============================================================
-echo.
-echo [WARNING] This script is DEPRECATED!
-echo.
-echo Reason:
-echo   - PyInstaller-based builds have HIGH false-positive rate
-echo   - Windows Defender may flag as virus
-echo.
-echo Recommended Alternative:
-echo   - Use scripts\release_flutter.bat instead
-echo   - Flutter-based build with LOWER false-positive rate
-echo.
-echo ============================================================
-echo.
-set /p CONTINUE="Do you want to continue anyway? (y/N): "
-if /i not "%CONTINUE%"=="y" (
-    echo [CANCELLED] Please use scripts\release_flutter.bat instead
-    pause
-    exit /b 0
-)
 echo.
 
 REM Get version number from argument or prompt
@@ -53,12 +37,14 @@ if "%VERSION%"=="" (
 
 echo Version: %VERSION%
 echo Tag: latest (always points to newest release)
+echo Build Method: Flet Build (Flutter SDK)
+echo Note: Product info from pyproject.toml
 echo.
 
 REM ============================================================
 REM Step 1: Check dependencies
 REM ============================================================
-echo [Step 1/5] Checking dependencies...
+echo [Step 1/6] Checking dependencies...
 echo.
 
 REM Check Python
@@ -91,22 +77,26 @@ echo   [OK] GitHub CLI found
 echo.
 
 REM ============================================================
-REM Step 2: Build single-file executable with Flet Pack
+REM Step 2: Build with Flet Build (Flutter)
 REM ============================================================
-echo [Step 2/5] Building single-file executable with Flet Pack...
+echo [Step 2/6] Building with Flet Build (Flutter)...
 echo.
 
-REM Clean previous builds
-if exist "dist" rmdir /s /q "dist"
+REM Ensure all dependencies are installed (including flet-cli)
+echo   Installing dependencies with uv...
+uv sync --all-extras
+if %errorlevel% neq 0 (
+    echo [ERROR] Failed to sync dependencies!
+    pause
+    exit /b 1
+)
+echo   [OK] Dependencies synced
 
-REM Build with Flet Pack (PyInstaller-based, single file)
-uv run flet pack main.py ^
-    --name "PrivacyEraser" ^
-    --product-name "Privacy Eraser" ^
-    --product-version "%VERSION%" ^
-    --file-description "Privacy Eraser - Browser Data Cleaner" ^
-    --copyright "Copyright (C) 2025 seolcoding.com" ^
-    --add-data "static/images;static/images"
+REM Clean previous builds
+if exist "build\windows" rmdir /s /q "build\windows"
+
+REM Build with Flet Build (Flutter-based, uses pyproject.toml settings)
+uv run flet build windows
 
 if %errorlevel% neq 0 (
     echo [ERROR] Build failed!
@@ -114,20 +104,54 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 
-REM Verify executable exists
-if not exist "dist\PrivacyEraser.exe" (
-    echo [ERROR] Executable is missing!
+REM Verify build output exists
+if not exist "build\windows" (
+    echo [ERROR] Build directory is missing!
     pause
     exit /b 1
 )
 
-echo   [OK] Build successful (single file)
+echo   [OK] Build successful (Flutter/onedir)
 echo.
 
 REM ============================================================
-REM Step 3: Create and push Git tag (always "latest")
+REM Step 3: Create ZIP archive
 REM ============================================================
-echo [Step 3/5] Creating Git tag...
+echo [Step 3/6] Creating ZIP archive...
+echo.
+
+set ZIP_NAME=PrivacyEraser-v%VERSION%-win-x64.zip
+
+REM Delete old ZIP if exists
+if exist "%ZIP_NAME%" del /f "%ZIP_NAME%"
+
+REM Create ZIP using PowerShell
+powershell -Command "Compress-Archive -Path 'build\windows\*' -DestinationPath '%ZIP_NAME%' -Force"
+
+if %errorlevel% neq 0 (
+    echo [ERROR] ZIP creation failed!
+    pause
+    exit /b 1
+)
+
+REM Verify ZIP exists
+if not exist "%ZIP_NAME%" (
+    echo [ERROR] ZIP file is missing!
+    pause
+    exit /b 1
+)
+
+REM Calculate SHA256 hash
+powershell -Command "Get-FileHash '%ZIP_NAME%' -Algorithm SHA256 | ForEach-Object { \"$($_.Hash)  %ZIP_NAME%\" } | Out-File '%ZIP_NAME%.sha256' -Encoding ascii"
+
+echo   [OK] ZIP created: %ZIP_NAME%
+echo   [OK] Hash file: %ZIP_NAME%.sha256
+echo.
+
+REM ============================================================
+REM Step 4: Create and push Git tag (always "latest")
+REM ============================================================
+echo [Step 4/6] Creating Git tag...
 echo.
 
 REM Delete existing "latest" tag (locally and remotely)
@@ -136,7 +160,7 @@ git push origin ":refs/tags/latest" 2>nul
 echo   [OK] Old "latest" tag deleted
 
 REM Create new "latest" tag
-git tag -a "latest" -m "Release v%VERSION% - Flet UI (Flutter)"
+git tag -a "latest" -m "Release v%VERSION% - Flet Build (Flutter)"
 if %errorlevel% neq 0 (
     echo [ERROR] Failed to create tag!
     pause
@@ -155,9 +179,9 @@ echo   [OK] Tag pushed to GitHub
 echo.
 
 REM ============================================================
-REM Step 4: Create GitHub Release
+REM Step 5: Create GitHub Release
 REM ============================================================
-echo [Step 4/5] Creating GitHub Release...
+echo [Step 5/6] Creating GitHub Release...
 echo.
 
 REM Delete existing "latest" release if it exists
@@ -173,9 +197,10 @@ if not exist "RELEASE_NOTES.md" (
 echo   [OK] RELEASE_NOTES.md found
 
 REM Create release with gh CLI (using RELEASE_NOTES.md)
-REM Use --target to specify the commit/branch explicitly
+REM Use --target to specify the tag explicitly
 gh release create "latest" ^
-    "dist\PrivacyEraser.exe" ^
+    "%ZIP_NAME%" ^
+    "%ZIP_NAME%.sha256" ^
     --title "Privacy Eraser v%VERSION%" ^
     --notes-file "RELEASE_NOTES.md" ^
     --target "latest"
@@ -190,7 +215,7 @@ echo   [OK] GitHub Release created
 echo.
 
 REM ============================================================
-REM Step 5: Summary
+REM Step 6: Summary
 REM ============================================================
 echo ============================================================
 echo RELEASE COMPLETED SUCCESSFULLY!
@@ -198,10 +223,12 @@ echo ============================================================
 echo.
 echo Version: %VERSION%
 echo Tag: latest (always points to newest)
-echo Executable: dist\PrivacyEraser.exe (single file)
+echo Build Method: Flet Build (Flutter SDK)
+echo Package: %ZIP_NAME%
+echo Hash: %ZIP_NAME%.sha256
 echo Framework: Flet (Flutter for Python)
 echo.
-echo GitHub Release: https://github.com/seolcoding/Privacy-Eraser/releases/latest
+echo Download: https://github.com/seolcoding/Privacy-Eraser/releases/latest
 echo.
 echo ============================================================
 echo.
