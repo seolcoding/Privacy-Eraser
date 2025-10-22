@@ -89,10 +89,10 @@ def check_running_browsers(browsers: list[str]) -> list[str]:
     try:
         # Get list of running processes (Windows)
         result = subprocess.run(
-            ["tasklist", "/FO", "CSV", "/NH"],
+            ['tasklist', '/FO', 'CSV', '/NH'],
             capture_output=True,
             text=True,
-            creationflags=subprocess.CREATE_NO_WINDOW,
+            creationflags=subprocess.CREATE_NO_WINDOW
         )
 
         if result.returncode == 0:
@@ -136,30 +136,26 @@ def kill_browser_processes(browsers: list[str]) -> tuple[int, list[str]]:
             try:
                 # Try graceful shutdown first (without /F flag)
                 result = subprocess.run(
-                    ["taskkill", "/IM", process_name],
+                    ['taskkill', '/IM', process_name],
                     capture_output=True,
                     text=True,
                     creationflags=subprocess.CREATE_NO_WINDOW,
-                    timeout=5,
+                    timeout=5
                 )
 
                 if result.returncode == 0:
-                    logger.info(
-                        f"Gracefully terminated browser process: {process_name}"
-                    )
+                    logger.info(f"Gracefully terminated browser process: {process_name}")
                     browser_killed = True
                     killed_count += 1
             except subprocess.TimeoutExpired:
                 # If graceful shutdown times out, force kill
                 try:
-                    logger.info(
-                        f"Graceful shutdown timed out, forcing kill: {process_name}"
-                    )
+                    logger.info(f"Graceful shutdown timed out, forcing kill: {process_name}")
                     result = subprocess.run(
-                        ["taskkill", "/F", "/IM", process_name],
+                        ['taskkill', '/F', '/IM', process_name],
                         capture_output=True,
                         text=True,
-                        creationflags=subprocess.CREATE_NO_WINDOW,
+                        creationflags=subprocess.CREATE_NO_WINDOW
                     )
                     if result.returncode == 0:
                         browser_killed = True
@@ -324,9 +320,7 @@ class FletCleanerWorker(threading.Thread):
             browser_dir = TEST_DATA_DIR / browser.lower()
 
             if not browser_dir.exists():
-                logger.warning(
-                    f"[WARN] Test data not found for {browser}: {browser_dir}"
-                )
+                logger.warning(f"[WARN] Test data not found for {browser}: {browser_dir}")
                 browser_counts[browser] = 0
                 continue
 
@@ -365,9 +359,7 @@ class FletCleanerWorker(threading.Thread):
             for option_id in options:
                 try:
                     # Find matching CleanerOption by ID
-                    matching_option = next(
-                        (opt for opt in cleaner_options if opt.id == option_id), None
-                    )
+                    matching_option = next((opt for opt in cleaner_options if opt.id == option_id), None)
                     if matching_option:
                         for action in matching_option.actions:
                             expanded = self._expand_path(action.path)
@@ -386,7 +378,7 @@ class FletCleanerWorker(threading.Thread):
 
         try:
             # Normalize path separators for Windows (/ -> \)
-            normalized_path = path.replace("/", os.sep)
+            normalized_path = path.replace('/', os.sep)
 
             # Expand environment variables
             expanded = os.path.expandvars(normalized_path)
@@ -413,7 +405,6 @@ class FletCleanerWorker(threading.Thread):
         try:
             if os.path.isdir(path):
                 import shutil
-
                 shutil.rmtree(path, ignore_errors=True)
             else:
                 os.remove(path)
@@ -467,9 +458,7 @@ class BrowserCard(ft.Container):
 
         # 브라우저 이름 소문자로 변환하여 매칭
         browser_key = browser_info.name.lower()
-        icon_src = icon_image_map.get(
-            browser_key, get_resource_path("static/images/chrome.png")
-        )
+        icon_src = icon_image_map.get(browser_key, get_resource_path("static/images/chrome.png"))
 
         # Card content (아이콘을 이미지로 교체)
         content = ft.Column(
@@ -606,7 +595,6 @@ def main(page: ft.Page):
 
         # DEV 모드로 전환 시 더미 데이터 삭제 후 재생성
         if new_state:
-
             def generate_test_data_async():
                 """Background thread to regenerate test data"""
                 try:
@@ -668,7 +656,7 @@ def main(page: ft.Page):
 
     # Warning text (visible only in DEV mode)
     dev_warning_text = ft.Text(
-        "개발자 모드 : 실제 파일이 삭제되지 않습니다",
+        "실제 파일이 삭제되지 않습니다",
         size=11,
         weight=ft.FontWeight.W_500,
         color=AppColors.DANGER,
@@ -805,10 +793,7 @@ def main(page: ft.Page):
             color="#FFFFFF",
             shape=ft.RoundedRectangleBorder(radius=19),
         ),
-        on_click=lambda e: (
-            logger.info("[DEBUG] 실행 예약 버튼 클릭됨"),
-            show_schedule_dialog(),
-        ),
+        on_click=lambda e: (logger.info("[DEBUG] 실행 예약 버튼 클릭됨"), show_schedule_dialog()),
     )
 
     # 버튼 레이아웃 (1행에 3개)
@@ -989,11 +974,7 @@ def main(page: ft.Page):
                         ft.Container(height=12),
                         ft.Row(
                             [
-                                ft.Icon(
-                                    ft.Icons.INFO_OUTLINE,
-                                    color=AppColors.PRIMARY,
-                                    size=20,
-                                ),
+                                ft.Icon(ft.Icons.INFO_OUTLINE, color=AppColors.PRIMARY, size=20),
                                 ft.Text(
                                     "추후 업데이트 예정",
                                     size=11,
@@ -1008,11 +989,7 @@ def main(page: ft.Page):
                                 [
                                     ft.Row(
                                         [
-                                            ft.Icon(
-                                                ft.Icons.LOCK,
-                                                color=AppColors.DANGER,
-                                                size=18,
-                                            ),
+                                            ft.Icon(ft.Icons.LOCK, color=AppColors.DANGER, size=18),
                                             ft.Text(
                                                 "관리자 전용 기능",
                                                 size=11,
@@ -1043,7 +1020,7 @@ def main(page: ft.Page):
             actions=[
                 ft.ElevatedButton(
                     "확인",
-                    width=float("inf"),
+                    width=float('inf'),
                     height=40,
                     bgcolor=AppColors.PRIMARY,
                     color="#FFFFFF",
@@ -1235,11 +1212,7 @@ def main(page: ft.Page):
                 ft.Container(
                     content=ft.Row(
                         [
-                            ft.Icon(
-                                ft.Icons.WARNING_AMBER_ROUNDED,
-                                color=AppColors.WARNING,
-                                size=16,
-                            ),
+                            ft.Icon(ft.Icons.WARNING_AMBER_ROUNDED, color=AppColors.WARNING, size=16),
                             ft.Text(
                                 "선택한 브라우저가 종료됩니다",
                                 size=10,
@@ -1277,7 +1250,7 @@ def main(page: ft.Page):
                 # 취소 버튼 (전체 너비, 테두리)
                 ft.OutlinedButton(
                     "취소",
-                    width=float("inf"),  # 가로 전체
+                    width=float('inf'),  # 가로 전체
                     height=38,  # 36 → 38 (+5.5%)
                     style=ft.ButtonStyle(
                         shape=ft.RoundedRectangleBorder(radius=8),
@@ -1288,7 +1261,7 @@ def main(page: ft.Page):
                 # 삭제하기 버튼 (가로 전체)
                 ft.ElevatedButton(
                     "삭제하기",
-                    width=float("inf"),  # 가로 전체
+                    width=float('inf'),  # 가로 전체
                     height=42,  # 40 → 42 (+5%)
                     bgcolor=AppColors.DANGER,
                     color="#FFFFFF",
@@ -1315,12 +1288,8 @@ def main(page: ft.Page):
                 content=content_column,
                 width=320,  # 너비 고정
             ),
-            content_padding=ft.padding.only(
-                left=20, right=20, top=12, bottom=18
-            ),  # 10 → 12, 16 → 18
-            title_padding=ft.padding.only(
-                left=20, right=20, top=18, bottom=10
-            ),  # 16 → 18, 8 → 10
+            content_padding=ft.padding.only(left=20, right=20, top=12, bottom=18),  # 10 → 12, 16 → 18
+            title_padding=ft.padding.only(left=20, right=20, top=18, bottom=10),  # 16 → 18, 8 → 10
             actions=[],  # 버튼을 content 안에 포함시킴
             actions_padding=0,  # actions 패딩 제거
         )
@@ -1373,7 +1342,8 @@ def main(page: ft.Page):
                     height=36,
                     bgcolor=AppColors.SURFACE,
                     border=ft.border.all(
-                        2, AppColors.BORDER_SELECTED if selected else AppColors.BORDER
+                        2,
+                        AppColors.BORDER_SELECTED if selected else AppColors.BORDER
                     ),
                     border_radius=8,
                     padding=6,
@@ -1384,7 +1354,8 @@ def main(page: ft.Page):
             def toggle(self, e):
                 self.selected = not self.selected
                 self.container.border = ft.border.all(
-                    2, AppColors.BORDER_SELECTED if self.selected else AppColors.BORDER
+                    2,
+                    AppColors.BORDER_SELECTED if self.selected else AppColors.BORDER
                 )
                 self.container.content.opacity = 1.0 if self.selected else 0.4
                 page.update()
@@ -1537,9 +1508,7 @@ def main(page: ft.Page):
                         weight=ft.FontWeight.W_500,
                     ),
                     bgcolor=AppColors.PRIMARY if initial_value else AppColors.SURFACE,
-                    border=ft.border.all(
-                        1, AppColors.BORDER if not initial_value else AppColors.PRIMARY
-                    ),
+                    border=ft.border.all(1, AppColors.BORDER if not initial_value else AppColors.PRIMARY),
                     border_radius=12,
                     padding=ft.padding.symmetric(horizontal=10, vertical=4),
                     on_click=self.toggle,
@@ -1548,15 +1517,11 @@ def main(page: ft.Page):
 
             def toggle(self, e):
                 self.value = not self.value
-                self.container.bgcolor = (
-                    AppColors.PRIMARY if self.value else AppColors.SURFACE
-                )
+                self.container.bgcolor = AppColors.PRIMARY if self.value else AppColors.SURFACE
                 self.container.border = ft.border.all(
                     1, AppColors.PRIMARY if self.value else AppColors.BORDER
                 )
-                self.container.content.color = (
-                    "#FFFFFF" if self.value else AppColors.TEXT_SECONDARY
-                )
+                self.container.content.color = "#FFFFFF" if self.value else AppColors.TEXT_SECONDARY
                 page.update()
 
         opt_bookmarks = OptionChip("북마크", delete_bookmarks)
@@ -1564,11 +1529,7 @@ def main(page: ft.Page):
         opt_downloads_folder = OptionChip("DL파일", delete_downloads_folder)
 
         options_row = ft.Row(
-            [
-                opt_bookmarks.container,
-                opt_downloads.container,
-                opt_downloads_folder.container,
-            ],
+            [opt_bookmarks.container, opt_downloads.container, opt_downloads_folder.container],
             spacing=6,
         )
 
@@ -1590,9 +1551,7 @@ def main(page: ft.Page):
                 show_error("시간 형식이 올바르지 않습니다. (시간: 0-23, 분: 0-59)")
                 return
 
-            selected_browser_list = [
-                chip.name for chip in browser_chips if chip.selected
-            ]
+            selected_browser_list = [chip.name for chip in browser_chips if chip.selected]
             if not selected_browser_list:
                 show_error("최소 하나의 브라우저를 선택해주세요.")
                 return
@@ -1624,9 +1583,7 @@ def main(page: ft.Page):
                 schedule_manager.update_schedule(
                     editing_scenario_id,
                     name=name_field.value.strip(),
-                    description=description_field.value.strip()
-                    if description_field.value
-                    else "",
+                    description=description_field.value.strip() if description_field.value else "",
                     schedule_type=schedule_type_dropdown.value,
                     time=time_str,
                     weekdays=weekdays_list or [],
@@ -1641,9 +1598,7 @@ def main(page: ft.Page):
                 # 생성
                 schedule_manager.create_schedule(
                     name=name_field.value.strip(),
-                    description=description_field.value.strip()
-                    if description_field.value
-                    else "",
+                    description=description_field.value.strip() if description_field.value else "",
                     schedule_type=schedule_type_dropdown.value,
                     time=time_str,
                     weekdays=weekdays_list,
@@ -1828,9 +1783,7 @@ def main(page: ft.Page):
 
             if scenario.schedule_type == "weekly" and scenario.weekdays:
                 weekday_names_kr = ["일", "월", "화", "수", "목", "금", "토"]
-                days_str = ", ".join(
-                    [weekday_names_kr[d] for d in sorted(scenario.weekdays)]
-                )
+                days_str = ", ".join([weekday_names_kr[d] for d in sorted(scenario.weekdays)])
                 schedule_str += f" ({days_str})"
 
             if scenario.schedule_type == "monthly" and scenario.day_of_month:
@@ -1935,7 +1888,7 @@ def main(page: ft.Page):
                 bgcolor=AppColors.SURFACE if scenario.enabled else "#F9F9F9",
                 border=ft.border.all(
                     1,
-                    AppColors.BORDER_SELECTED if scenario.enabled else AppColors.BORDER,
+                    AppColors.BORDER_SELECTED if scenario.enabled else AppColors.BORDER
                 ),
                 border_radius=8,
                 padding=12,
@@ -2004,7 +1957,8 @@ def main(page: ft.Page):
             for chip in browser_chips:
                 chip.selected = chip.name in scenario.browsers
                 chip.container.border = ft.border.all(
-                    2, AppColors.BORDER_SELECTED if chip.selected else AppColors.BORDER
+                    2,
+                    AppColors.BORDER_SELECTED if chip.selected else AppColors.BORDER
                 )
                 chip.container.content.opacity = 1.0 if chip.selected else 0.4
 
@@ -2027,9 +1981,7 @@ def main(page: ft.Page):
                 title=ft.Text("시나리오 삭제"),
                 content=ft.Text(f"'{scenario.name}' 시나리오를 삭제하시겠습니까?"),
                 actions=[
-                    ft.TextButton(
-                        "취소", on_click=lambda e: close_dialog(confirm_dialog)
-                    ),
+                    ft.TextButton("취소", on_click=lambda e: close_dialog(confirm_dialog)),
                     ft.ElevatedButton(
                         "삭제",
                         bgcolor=AppColors.DANGER,
@@ -2198,7 +2150,7 @@ def main(page: ft.Page):
         # Grid 레이아웃 (2열)
         browser_cards_rows = []
         for i in range(0, len(selected_browsers_list), 2):
-            row_browsers = selected_browsers_list[i : i + 2]
+            row_browsers = selected_browsers_list[i:i+2]
             row = ft.Row(
                 [browser_progress[b]["card"] for b in row_browsers],
                 spacing=12,
@@ -2228,14 +2180,10 @@ def main(page: ft.Page):
                     overall_text,
                     overall_progress_bar,
                     ft.Divider(height=1, color=AppColors.BORDER),
-                    ft.Text(
-                        "브라우저별 진행 상황", size=12, weight=ft.FontWeight.W_600
-                    ),
+                    ft.Text("브라우저별 진행 상황", size=12, weight=ft.FontWeight.W_600),
                     browser_progress_column,
                     ft.Divider(height=1, color=AppColors.BORDER),
-                    ft.Text(
-                        "삭제된 파일 (최근 100개)", size=12, weight=ft.FontWeight.W_600
-                    ),
+                    ft.Text("삭제된 파일 (최근 100개)", size=12, weight=ft.FontWeight.W_600),
                     ft.Container(
                         content=file_list_column,
                         bgcolor="#F9F9F9",
@@ -2308,17 +2256,13 @@ def main(page: ft.Page):
                     progress_value = bp["current"] / bp["total"]
                     # 배경 Container의 width를 조절 (230px 카드 전체 너비)
                     bp["progress_bg"].width = 230 * progress_value
-                    bp[
-                        "progress_text"
-                    ].value = (
-                        f"{bp['current']}/{bp['total']} ({progress_value * 100:.0f}%)"
-                    )
+                    bp["progress_text"].value = f"{bp['current']}/{bp['total']} ({progress_value*100:.0f}%)"
 
             # 전체 진행률 업데이트
             if total_files_count > 0:
                 overall_progress = deleted_files_count / total_files_count
                 overall_progress_bar.value = overall_progress
-                overall_text.value = f"전체: {deleted_files_count}/{total_files_count} 파일 ({overall_progress * 100:.0f}%)"
+                overall_text.value = f"전체: {deleted_files_count}/{total_files_count} 파일 ({overall_progress*100:.0f}%)"
 
             # 파일 목록에 추가 (최근 100개만 유지)
             file_name = Path(file_path).name
@@ -2400,7 +2344,7 @@ def main(page: ft.Page):
             # Grid 레이아웃 (3열)
             stats_rows = []
             for i in range(0, len(browser_stats_cards), 3):
-                row_cards = browser_stats_cards[i : i + 3]
+                row_cards = browser_stats_cards[i:i+3]
                 row = ft.Row(
                     row_cards,
                     spacing=12,
@@ -2410,30 +2354,28 @@ def main(page: ft.Page):
 
             # UI를 통계 화면으로 교체
             progress_content.content.controls.clear()
-            progress_content.content.controls.extend(
-                [
-                    ft.Row(
-                        [
-                            overall_text,
-                            ft.Text(
-                                f"소요시간: {stats.duration:.1f}초",
-                                size=13,
-                                color=AppColors.TEXT_SECONDARY,
-                            ),
-                        ],
-                        alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
-                    ),
-                    ft.Divider(height=1, color=AppColors.BORDER),
-                    ft.Text(
-                        f"총 {stats.deleted_files}개 파일 ({stats.deleted_size_mb:.1f} MB) 삭제됨",
-                        size=14,
-                        weight=ft.FontWeight.W_500,
-                    ),
-                    ft.Divider(height=1, color=AppColors.BORDER),
-                    ft.Text("브라우저별 상세", size=13, weight=ft.FontWeight.W_600),
-                    ft.Column(stats_rows, spacing=8),
-                ]
-            )
+            progress_content.content.controls.extend([
+                ft.Row(
+                    [
+                        overall_text,
+                        ft.Text(
+                            f"소요시간: {stats.duration:.1f}초",
+                            size=13,
+                            color=AppColors.TEXT_SECONDARY,
+                        ),
+                    ],
+                    alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                ),
+                ft.Divider(height=1, color=AppColors.BORDER),
+                ft.Text(
+                    f"총 {stats.deleted_files}개 파일 ({stats.deleted_size_mb:.1f} MB) 삭제됨",
+                    size=14,
+                    weight=ft.FontWeight.W_500,
+                ),
+                ft.Divider(height=1, color=AppColors.BORDER),
+                ft.Text("브라우저별 상세", size=13, weight=ft.FontWeight.W_600),
+                ft.Column(stats_rows, spacing=8),
+            ])
 
             # Add close button
             progress_dialog.actions = [

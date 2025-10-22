@@ -9,14 +9,13 @@ from pathlib import Path
 
 # 기본 삭제 대상 (개인정보만 삭제, 캐시 및 브라우저 설정 제외)
 # 캐시 파일(이미지 등)은 개인정보가 아니므로 기본적으로 삭제하지 않음
-# sync 옵션: Local State의 profile 키는 제외하여 브라우저 설정(테마, 확장프로그램) 보존
+# sync 옵션은 제외 - Local State의 profile 키를 삭제하여 브라우저 초기화 문제 발생
 DEFAULT_CLEANER_OPTIONS = [
     "cookies",  # 쿠키
     "history",  # 브라우징 히스토리
     "session",  # 세션 데이터
     "passwords",  # 저장된 비밀번호
     "form_history",  # 자동완성 데이터
-    "sync",  # 로그인 삭제 (설정은 유지)
 ]
 
 # 북마크 옵션 (토글 활성화 시만 삭제)
