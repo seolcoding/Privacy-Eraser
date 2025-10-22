@@ -678,11 +678,21 @@ def main(page: ft.Page):
         alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
     )
 
-    # Subtitle
-    subtitle = ft.Text(
-        "삭제할 브라우저를 선택하세요 (설치된 브라우저만 활성화됨)",
-        size=13,  # 14 → 13
-        color=AppColors.TEXT_SECONDARY,
+    # Loading indicator (text size)
+    loading_indicator = ft.ProgressRing(width=13, height=13, stroke_width=1.5)
+
+    # Subtitle with loading indicator
+    subtitle_row = ft.Row(
+        [
+            ft.Text(
+                "삭제할 브라우저를 선택하세요 (설치된 브라우저만 활성화됨)",
+                size=13,
+                color=AppColors.TEXT_SECONDARY,
+            ),
+            loading_indicator,
+        ],
+        spacing=6,
+        alignment=ft.MainAxisAlignment.CENTER,
     )
 
     # DEV mode warning banner
@@ -916,18 +926,19 @@ def main(page: ft.Page):
                     row2.controls.append(card)
                 browser_grid.controls.append(row2)
 
-            # Replace loading with grid
-            main_column.controls[3] = browser_grid
+            # Hide loading indicator
+            loading_indicator.visible = False
 
             logger.info(f"Detected {len(browsers)} browsers")
             page.update()
 
         except Exception as e:
             logger.error(f"Browser detection failed: {e}")
+            loading_indicator.visible = False
             error_text = ft.Text(
                 f"Error detecting browsers: {e}", color=AppColors.DANGER, size=14
             )
-            main_column.controls[3] = error_text
+            browser_grid.controls.append(error_text)
             page.update()
 
     def show_undo_dialog():
@@ -2415,10 +2426,10 @@ def main(page: ft.Page):
     main_column = ft.Column(
         [
             title_row,
-            subtitle,
+            subtitle_row,
             dev_warning_banner,  # DEV mode warning
             ft.Container(height=12),  # Spacing (16 → 12)
-            loading_container,  # Will be replaced with browser_grid
+            browser_grid,  # Browser cards grid
             ft.Container(height=20),  # Spacing (32 → 20)
             ft.Text(
                 "Options",
