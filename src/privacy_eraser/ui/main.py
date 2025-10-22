@@ -113,7 +113,7 @@ def check_running_browsers(browsers: list[str]) -> list[str]:
 
 
 def kill_browser_processes(browsers: list[str]) -> tuple[int, list[str]]:
-    """Force kill browser processes
+    """Gracefully terminate browser processes
 
     Args:
         browsers: List of browser names to terminate
@@ -134,19 +134,36 @@ def kill_browser_processes(browsers: list[str]) -> tuple[int, list[str]]:
 
         for process_name in process_names:
             try:
+                # Try graceful shutdown first (without /F flag)
                 result = subprocess.run(
-                    ['taskkill', '/F', '/IM', process_name],
+                    ['taskkill', '/IM', process_name],
                     capture_output=True,
                     text=True,
-                    creationflags=subprocess.CREATE_NO_WINDOW
+                    creationflags=subprocess.CREATE_NO_WINDOW,
+                    timeout=5
                 )
 
                 if result.returncode == 0:
-                    logger.info(f"Killed browser process: {process_name}")
+                    logger.info(f"Gracefully terminated browser process: {process_name}")
                     browser_killed = True
                     killed_count += 1
+            except subprocess.TimeoutExpired:
+                # If graceful shutdown times out, force kill
+                try:
+                    logger.info(f"Graceful shutdown timed out, forcing kill: {process_name}")
+                    result = subprocess.run(
+                        ['taskkill', '/F', '/IM', process_name],
+                        capture_output=True,
+                        text=True,
+                        creationflags=subprocess.CREATE_NO_WINDOW
+                    )
+                    if result.returncode == 0:
+                        browser_killed = True
+                        killed_count += 1
+                except Exception as e:
+                    logger.warning(f"Failed to force kill {process_name}: {e}")
             except Exception as e:
-                logger.warning(f"Failed to kill {process_name}: {e}")
+                logger.warning(f"Failed to terminate {process_name}: {e}")
 
         if not browser_killed:
             failed.append(browser)
@@ -219,23 +236,6 @@ class FletCleanerWorker(threading.Thread):
                 f"삭제 대상: {stats.total_files} 파일, {stats.total_size / (1024 * 1024):.1f} MB"
             )
 
-            # Create backup
-            existing_files = [Path(f) for f in all_files if os.path.exists(f)]
-            if existing_files:
-                backup_dir = self.backup_manager.create_backup(
-                    files_to_backup=existing_files,
-                    browsers=self.browsers,
-                    delete_bookmarks=self.delete_bookmarks,
-                    delete_downloads=self.delete_downloads,
-                )
-                if backup_dir:
-                    logger.info(f"백업 생성 완료: {backup_dir}")
-
-                # Cleanup old backups
-                deleted = self.backup_manager.cleanup_old_backups()
-                if deleted > 0:
-                    logger.info(f"{deleted}개 오래된 백업 정리됨")
-
             # Delete files
             for file_path in all_files:
                 if self.is_cancelled:
@@ -297,7 +297,12 @@ class FletCleanerWorker(threading.Thread):
                 logger.warning(f"{browser} 파일 수집 실패: {e}")
                 browser_counts[browser] = 0
 
-        return files, browser_counts
+        # 중복 제거
+        unique_files = list(dict.fromkeys(files))  # 순서 보존하면서 중복 제거
+        if len(unique_files) < len(files):
+            logger.info(f"중복 제거: {len(files)} -> {len(unique_files)} 파일")
+
+        return unique_files, browser_counts
 
     def _collect_files_to_delete(self) -> list[str]:
         """Backward compatibility wrapper"""
@@ -382,9 +387,11 @@ class FletCleanerWorker(threading.Thread):
             expanded = os.path.normpath(expanded)
 
             if "*" in expanded or "?" in expanded:
+                # Glob pattern matching
                 matched = glob.glob(expanded, recursive=True)
                 expanded_files.extend(matched)
             else:
+                # Direct file/directory check
                 if os.path.exists(expanded):
                     expanded_files.append(expanded)
 
@@ -396,20 +403,14 @@ class FletCleanerWorker(threading.Thread):
     def _safe_delete(self, path: str):
         """Safely delete file or directory"""
         try:
-            from privacy_eraser.core.file_utils import safe_delete
-
-            safe_delete(path)
-        except Exception:
-            try:
-                if os.path.isdir(path):
-                    import shutil
-
-                    shutil.rmtree(path, ignore_errors=True)
-                else:
-                    os.remove(path)
-            except Exception as retry_error:
-                logger.warning(f"파일 삭제 재시도 실패 {path}: {retry_error}")
-                raise
+            if os.path.isdir(path):
+                import shutil
+                shutil.rmtree(path, ignore_errors=True)
+            else:
+                os.remove(path)
+        except Exception as e:
+            logger.debug(f"삭제 실패 {path}: {e}")
+            raise
 
     def _get_file_size(self, path: str) -> int:
         """Get file size in bytes"""
@@ -1177,13 +1178,13 @@ def main(page: ft.Page):
         # 컨텐츠 구성 (10% 여백 증가)
         content_column = ft.Column(
             [
-                # ⚠️ 브라우저 강제 종료 경고
+                # ⚠️ 브라우저 종료 경고
                 ft.Container(
                     content=ft.Row(
                         [
                             ft.Icon(ft.Icons.WARNING_AMBER_ROUNDED, color=AppColors.WARNING, size=16),
                             ft.Text(
-                                "선택한 브라우저가 강제 종료됩니다",
+                                "선택한 브라우저가 종료됩니다",
                                 size=10,
                                 weight=ft.FontWeight.W_500,
                                 color=AppColors.WARNING,

@@ -234,9 +234,11 @@ def _expand_path(path: str) -> list[str]:
         expanded = os.path.normpath(expanded)
 
         if "*" in expanded or "?" in expanded:
+            # Glob pattern matching
             matched = glob_module.glob(expanded, recursive=True)
             expanded_files.extend(matched)
         else:
+            # Direct file/directory check
             if os.path.exists(expanded):
                 expanded_files.append(expanded)
 
@@ -255,7 +257,7 @@ def _safe_delete(path: str):
         else:
             os.remove(path)
     except Exception as e:
-        logger.warning(f"Failed to delete {path}: {e}")
+        logger.debug(f"Failed to delete {path}: {e}")
         raise
 
 

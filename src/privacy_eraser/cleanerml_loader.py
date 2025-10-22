@@ -93,7 +93,9 @@ def load_cleaner_options_from_file(pathname: str) -> list[CleanerOption]:
             if not _os_match(act.getAttribute("os")):
                 continue
             command = act.getAttribute("command")
-            if command != "delete":
+            # Support delete, chrome.history, chrome.favicons commands
+            # (treat them all as file deletion)
+            if command not in ("delete", "chrome.history", "chrome.favicons", "json"):
                 # unsupported in minimal loader; skip
                 continue
             search = act.getAttribute("search") or "file"

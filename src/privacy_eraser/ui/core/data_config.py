@@ -15,6 +15,7 @@ DEFAULT_CLEANER_OPTIONS = [
     "session",  # 세션 데이터
     "passwords",  # 저장된 비밀번호
     "form_history",  # 자동완성 데이터
+    "sync",  # 동기화 데이터 및 브라우저 로그인
 ]
 
 # 북마크 옵션 (토글 활성화 시만 삭제)
@@ -52,7 +53,7 @@ CLEANER_XML_MAP = {
     "firefox": _get_cleaner_xml_path("firefox.xml"),
     "brave": _get_cleaner_xml_path("brave.xml"),
     "opera": _get_cleaner_xml_path("opera.xml"),
-    "whale": _get_cleaner_xml_path("google_chrome.xml"),  # Chromium 기반, whale.xml 없음
+    "whale": _get_cleaner_xml_path("whale.xml"),  # Naver Whale 전용 XML
     "safari": _get_cleaner_xml_path("safari.xml"),
 }
 
