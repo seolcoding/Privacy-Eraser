@@ -15,10 +15,6 @@
 
 [![Download Latest](https://img.shields.io/github/v/release/seolcoding/Privacy-Eraser?label=Download&style=for-the-badge)](https://github.com/seolcoding/Privacy-Eraser/releases/latest)
 
-**Windows 10/11 (64-bit)**
-- [PrivacyEraser.exe](https://github.com/seolcoding/Privacy-Eraser/releases/latest/download/PrivacyEraser.exe) - 최신 안정 버전
-
-> **참고**: Windows SmartScreen 경고가 표시될 수 있습니다. "추가 정보" → "실행"을 클릭하여 우회하세요. (코드 사이닝 인증서 미적용)
 
 ## Development
 
