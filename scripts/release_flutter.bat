@@ -96,7 +96,8 @@ REM Clean previous builds
 if exist "build\windows" rmdir /s /q "build\windows"
 
 REM Build with Flet Build (Flutter-based, uses pyproject.toml settings)
-uv run flet build windows
+REM Exclude unnecessary files to reduce build size (also set in pyproject.toml)
+uv run flet build windows --exclude test_data .git .venv references .claude .coverage
 
 if %errorlevel% neq 0 (
     echo [ERROR] Build failed!

@@ -30,6 +30,26 @@ copyright = "Copyright (C) 2025 seolcoding.com"
 build_number = 1
 icon = "static/icons/app_icon.ico"
 
+# Exclude unnecessary files from build to reduce size
+exclude = [
+    "test_data",
+    ".git",
+    ".venv",
+    "venv",
+    ".claude",
+    ".vscode",
+    ".idea",
+    ".cursor",
+    "references",
+    "reference",
+    "docs",
+    "scripts/generate_test_data.py",
+    "scripts/generate_icon.py",
+    ".coverage",
+    "*.log",
+    "*.tmp",
+]
+
 [build-system]
 requires = ["hatchling>=1.24"]
 build-backend = "hatchling.build"

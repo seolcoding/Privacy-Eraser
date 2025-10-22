@@ -350,12 +350,42 @@ scripts\release_flutter.bat
 빌드만 필요한 경우:
 
 ```bash
-# Flutter 빌드 (권장)
-uv run flet build windows
+# Flutter 빌드 (권장) - exclude 옵션으로 크기 최적화
+uv run flet build windows --exclude test_data .git .venv references .claude .coverage
 
 # PyInstaller 빌드 (오탐 위험)
 uv run flet pack main.py --name "PrivacyEraser" --add-data "static/images;static/images"
 ```
+
+### 빌드 크기 최적화
+
+**문제**: 기본 빌드는 불필요한 파일을 포함하여 크기가 큼 (1.2GB+)
+
+**해결 방법**:
+
+1. **pyproject.toml 설정** (권장)
+   ```toml
+   [tool.flet]
+   exclude = [
+       "test_data",    # DEV 모드 테스트 데이터
+       ".git",         # Git 히스토리
+       ".venv",        # 가상환경
+       "references",   # BleachBit 참조 코드
+       ".claude",      # Claude Code 설정
+       ".coverage",    # 테스트 커버리지
+   ]
+   ```
+
+2. **명령줄 옵션**
+   ```bash
+   uv run flet build windows --exclude test_data .git .venv references
+   ```
+
+3. **예상 크기**
+   - 최적화 전: ~1.2GB
+   - 최적화 후: ~100-150MB
+
+**주의**: `test_data/` 폴더가 있으면 크기가 크게 증가합니다. 빌드 전에 삭제하거나 exclude 옵션을 사용하세요.
 
 ---
 

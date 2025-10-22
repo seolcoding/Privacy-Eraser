@@ -136,8 +136,9 @@ def test_execute_dev_mode_browser_error(mock_count, sample_scenario):
 @patch("privacy_eraser.schedule_executor._get_browser_files")
 @patch("privacy_eraser.schedule_executor._safe_delete")
 @patch("privacy_eraser.schedule_executor._get_file_size")
+@patch("os.path.exists")
 def test_execute_prod_mode_single_browser(
-    mock_size, mock_delete, mock_get_files, sample_scenario
+    mock_exists, mock_size, mock_delete, mock_get_files, sample_scenario
 ):
     """Test PROD mode execution with single browser"""
     sample_scenario.browsers = ["Chrome"]
@@ -145,6 +146,7 @@ def test_execute_prod_mode_single_browser(
     # Mock files to delete
     test_files = ["/path/to/cache", "/path/to/cookies"]
     mock_get_files.return_value = test_files
+    mock_exists.return_value = True  # Files exist
     mock_size.return_value = 1024  # 1 KB per file
 
     result = execute_prod_mode(sample_scenario)
@@ -217,13 +219,15 @@ def test_execute_prod_mode_deletion_failure(
 @patch("privacy_eraser.schedule_executor._get_browser_files")
 @patch("privacy_eraser.schedule_executor._safe_delete")
 @patch("privacy_eraser.schedule_executor._get_file_size")
+@patch("os.path.exists")
 def test_execute_prod_mode_calculates_size(
-    mock_size, mock_delete, mock_get_files, sample_scenario
+    mock_exists, mock_size, mock_delete, mock_get_files, sample_scenario
 ):
     """Test PROD mode calculates deleted size correctly"""
     sample_scenario.browsers = ["Chrome"]
 
     mock_get_files.return_value = ["/file1", "/file2"]
+    mock_exists.return_value = True  # Files exist
     mock_size.side_effect = [1024 * 1024, 2 * 1024 * 1024]  # 1 MB, 2 MB
 
     result = execute_prod_mode(sample_scenario)
@@ -400,7 +404,7 @@ def test_execute_with_invalid_browser(mock_get_files, sample_scenario):
     assert result["deleted_files"] == 0
 
 
-@patch("privacy_eraser.schedule_executor.get_browser_xml_path")
+@patch("privacy_eraser.ui.core.data_config.get_browser_xml_path")
 def test_get_browser_files_missing_cleanerml(mock_xml_path):
     """Test _get_browser_files with missing CleanerML"""
     mock_xml_path.return_value = None
@@ -410,8 +414,8 @@ def test_get_browser_files_missing_cleanerml(mock_xml_path):
     assert len(result) == 0
 
 
-@patch("privacy_eraser.schedule_executor.get_browser_xml_path")
-@patch("privacy_eraser.schedule_executor.load_cleanerml")
+@patch("privacy_eraser.ui.core.data_config.get_browser_xml_path")
+@patch("privacy_eraser.cleanerml_loader.load_cleaner_options_from_file")
 def test_get_browser_files_handles_exception(mock_load, mock_xml_path):
     """Test _get_browser_files handles exceptions gracefully"""
     mock_xml_path.return_value = "/path/to/cleaner.xml"
