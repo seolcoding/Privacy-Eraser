@@ -14,7 +14,7 @@ class TestBrowserInfo:
 
     def test_browser_info_creation(self):
         """BrowserInfo 생성 테스트"""
-        from privacy_eraser.poc.core.browser_info import BrowserInfo
+        from privacy_eraser.ui.core.browser_info import BrowserInfo
 
         browser = BrowserInfo(
             name="Chrome",
@@ -30,7 +30,7 @@ class TestBrowserInfo:
 
     def test_browser_info_string_representation(self):
         """BrowserInfo 문자열 표현 테스트"""
-        from privacy_eraser.poc.core.browser_info import BrowserInfo
+        from privacy_eraser.ui.core.browser_info import BrowserInfo
 
         browser_installed = BrowserInfo(
             name="Chrome", icon="🌐", color="#4285F4", installed=True
@@ -50,7 +50,7 @@ class TestCleaningStats:
 
     def test_cleaning_stats_creation(self):
         """CleaningStats 생성 테스트"""
-        from privacy_eraser.poc.core.browser_info import CleaningStats
+        from privacy_eraser.ui.core.browser_info import CleaningStats
 
         stats = CleaningStats(
             total_files=100,
@@ -70,7 +70,7 @@ class TestCleaningStats:
 
     def test_cleaning_stats_properties(self):
         """CleaningStats 속성 테스트"""
-        from privacy_eraser.poc.core.browser_info import CleaningStats
+        from privacy_eraser.ui.core.browser_info import CleaningStats
 
         stats = CleaningStats(
             total_files=100,
@@ -87,7 +87,7 @@ class TestCleaningStats:
 
     def test_cleaning_stats_empty(self):
         """빈 CleaningStats 테스트"""
-        from privacy_eraser.poc.core.browser_info import CleaningStats
+        from privacy_eraser.ui.core.browser_info import CleaningStats
 
         stats = CleaningStats(
             total_files=0,
@@ -106,20 +106,9 @@ class TestCleaningStats:
 class TestDataConfig:
     """데이터 설정 모듈 테스트"""
 
-    def test_browser_icon_mapping(self):
-        """브라우저 아이콘 매핑 테스트"""
-        from privacy_eraser.poc.core.data_config import get_browser_icon
-
-        assert get_browser_icon("chrome") == "🌐"
-        assert get_browser_icon("firefox") == "🦊"
-        assert get_browser_icon("brave") == "🦁"
-        assert get_browser_icon("opera") == "🅾️"
-        assert get_browser_icon("whale") == "🐋"
-        assert get_browser_icon("unknown") == "🌐"  # Default
-
     def test_browser_color_mapping(self):
         """브라우저 색상 매핑 테스트"""
-        from privacy_eraser.poc.core.data_config import get_browser_color
+        from privacy_eraser.ui.core.data_config import get_browser_color
 
         assert get_browser_color("chrome") == "#4285F4"
         assert get_browser_color("firefox") == "#FF7139"
@@ -128,7 +117,7 @@ class TestDataConfig:
 
     def test_browser_display_name(self):
         """브라우저 표시 이름 테스트"""
-        from privacy_eraser.poc.core.data_config import get_browser_display_name
+        from privacy_eraser.ui.core.data_config import get_browser_display_name
 
         assert get_browser_display_name("chrome") == "Chrome"
         assert get_browser_display_name("firefox") == "Firefox"
@@ -137,7 +126,7 @@ class TestDataConfig:
 
     def test_cleaner_options_without_bookmarks(self):
         """북마크 제외 옵션 테스트"""
-        from privacy_eraser.poc.core.data_config import get_cleaner_options
+        from privacy_eraser.ui.core.data_config import get_cleaner_options
 
         options = get_cleaner_options(delete_bookmarks=False)
 
@@ -151,7 +140,7 @@ class TestDataConfig:
 
     def test_cleaner_options_with_bookmarks(self):
         """북마크 포함 옵션 테스트"""
-        from privacy_eraser.poc.core.data_config import get_cleaner_options
+        from privacy_eraser.ui.core.data_config import get_cleaner_options
 
         options = get_cleaner_options(delete_bookmarks=True)
 
@@ -162,127 +151,12 @@ class TestDataConfig:
 
     def test_browser_xml_path_mapping(self):
         """브라우저 XML 경로 매핑 테스트"""
-        from privacy_eraser.poc.core.data_config import get_browser_xml_path
+        from privacy_eraser.ui.core.data_config import get_browser_xml_path
 
         assert "chrome.xml" in get_browser_xml_path("chrome")
         assert "firefox.xml" in get_browser_xml_path("firefox")
         assert "brave.xml" in get_browser_xml_path("brave")
         assert get_browser_xml_path("unknown") == ""  # Empty for unknown
-
-
-class TestStyles:
-    """스타일 모듈 테스트"""
-
-    def test_colors_constants(self):
-        """색상 상수 정의 테스트"""
-        from privacy_eraser.poc.ui.styles import Colors
-
-        # Primary colors
-        assert Colors.PRIMARY == "#5E35B1"
-        assert Colors.PRIMARY_LIGHT == "#9162E4"
-        assert Colors.PRIMARY_DARK == "#280680"
-
-        # Secondary colors
-        assert Colors.SECONDARY == "#00BFA5"
-
-        # Status colors
-        assert Colors.SUCCESS == "#4CAF50"
-        assert Colors.WARNING == "#FF9800"
-        assert Colors.ERROR == "#F44336"
-
-    def test_typography_constants(self):
-        """타이포그래피 상수 테스트"""
-        from privacy_eraser.poc.ui.styles import Typography
-
-        assert Typography.SIZE_H1 == 32
-        assert Typography.SIZE_H2 == 24
-        assert Typography.SIZE_BODY == 14
-        assert Typography.WEIGHT_BOLD == 700
-        assert Typography.WEIGHT_REGULAR == 400
-
-    def test_sizes_constants(self):
-        """크기 상수 테스트"""
-        from privacy_eraser.poc.ui.styles import Sizes
-
-        assert Sizes.CARD_WIDTH == 150
-        assert Sizes.CARD_HEIGHT == 180
-        assert Sizes.BUTTON_HEIGHT == 48
-        assert Sizes.MAIN_WINDOW_WIDTH == 850
-        assert Sizes.MAIN_WINDOW_HEIGHT == 750
-
-    def test_spacing_constants(self):
-        """간격 상수 테스트"""
-        from privacy_eraser.poc.ui.styles import Spacing
-
-        assert Spacing.XS == 4
-        assert Spacing.SM == 8
-        assert Spacing.MD == 16
-        assert Spacing.LG == 24
-        assert Spacing.XL == 32
-
-    def test_get_stylesheet_returns_string(self):
-        """스타일시트 반환 테스트"""
-        from privacy_eraser.poc.ui.styles import get_stylesheet
-
-        stylesheet = get_stylesheet()
-
-        assert isinstance(stylesheet, str)
-        assert len(stylesheet) > 0
-        assert "QMainWindow" in stylesheet
-        assert "QPushButton" in stylesheet
-        assert "QCheckBox" in stylesheet
-
-
-class TestCleanerWorker:
-    """CleanerWorker 기본 테스트"""
-
-    @pytest.mark.skipif(IS_WINDOWS, reason="macOS/Linux 전용")
-    def test_cleaner_worker_path_expansion(self):
-        """경로 확장 테스트"""
-        from privacy_eraser.poc.core.poc_cleaner import CleanerWorker
-
-        worker = CleanerWorker(browsers=["Chrome"], delete_bookmarks=False)
-
-        # 테스트용 환경변수 설정
-        test_paths = [
-            "/tmp/test.txt",
-            "$HOME/test.txt",
-            "~/test.txt",
-        ]
-
-        for path in test_paths:
-            result = worker._expand_path(path)
-            assert isinstance(result, list)
-
-    @pytest.mark.skipif(IS_WINDOWS, reason="macOS/Linux 전용")
-    def test_cleaner_worker_file_size_calculation(self, tmp_path):
-        """파일 크기 계산 테스트"""
-        from privacy_eraser.poc.core.poc_cleaner import CleanerWorker
-
-        worker = CleanerWorker(browsers=["Chrome"], delete_bookmarks=False)
-
-        # 테스트 파일 생성
-        test_file = tmp_path / "test.txt"
-        test_content = "This is a test file content"
-        test_file.write_text(test_content)
-
-        # 파일 크기 계산
-        size = worker._get_file_size(str(test_file))
-        assert size == len(test_content.encode())
-
-        # 존재하지 않는 파일
-        non_existent = tmp_path / "non_existent.txt"
-        size = worker._get_file_size(str(non_existent))
-        assert size == 0
-
-        # 디렉토리 크기
-        test_dir = tmp_path / "test_dir"
-        test_dir.mkdir()
-        (test_dir / "file1.txt").write_text("content1")
-        (test_dir / "file2.txt").write_text("content2")
-
-        size = worker._get_file_size(str(test_dir))
-        assert size > 0
 
 
 class TestMocking:

@@ -1,28 +1,28 @@
-# PrivacyEraser Architecture (Current MVP)
+# PrivacyEraser Architecture (Flet POC)
 
-**Last Updated:** 2025-10-09  
-**Status:** MVP implementation in progress
+**Last Updated:** 2025-10-21
+**Status:** Flet UI POC - v2.0.0
 
 ## Overview
-PrivacyEraser is a Windows-focused privacy cleaning tool built with Python 3.12+, CustomTkinter GUI, and a modular cleaning engine compatible with BleachBit's CleanerML format.
+PrivacyEraser is a Windows-focused privacy cleaning tool built with Python 3.12+, Flet UI (Flutter for Python), and a modular cleaning engine. The project combines a Material Design 3 Flet interface with a powerful core engine for browser data deletion.
 
 ## Technology Stack
 
 ### Core
 - **Language:** Python 3.12+
 - **Package Manager:** uv
-- **GUI Framework:** CustomTkinter 5.2.0 (with tkinter fallback)
-- **Logging:** loguru + rich (colored terminal output)
+- **UI Framework:** Flet >= 0.28.0 (Flutter for Python, cross-platform)
+- **Logging:** loguru (structured logging)
 - **Process Management:** psutil 5.9.8
+- **Image Processing:** Pillow >= 10.0.0
 
 ### Current Dependencies
 ```toml
-customtkinter==5.2.0
-pillow==10.0.0
-loguru==0.7.2
-rich==13.7.1
-psutil==5.9.8
-setuptools>=68
+flet>=0.28.0
+pillow>=10.0.0
+loguru>=0.7.2
+psutil>=5.9.8
+pyinstaller>=6.16.0
 ```
 
 ### Test Dependencies
@@ -35,18 +35,19 @@ pytest-mock>=3.14.0
 ## Module Architecture
 
 ### Entry Point
-- `src/privacy_eraser/__main__.py`
-  - Single entry point: `main()` → launches GUI
-  - Installed as script: `privacy_eraser`
+- `src/privacy_eraser/ui/main.py`
+  - Main entry point: `main()` → launches Flet UI
+  - Installed as scripts: `privacy_eraser`, `privacy_eraser_poc`
+- `main.py` (project root) - Build wrapper for Flet Pack
 
-### GUI Layer (`gui.py`)
+### UI Layer (`ui/main.py`)
 **Responsibilities:**
-- Main application window (CustomTkinter or tkinter fallback)
-- Program detection table (Treeview widget)
+- Material Design 3 interface using Flet
+- Browser detection and display (grid layout with logo images)
 - Cleaner options panel with checkboxes
-- Preview and Clean action buttons
-- Collapsible Debug panel (variables + live console)
-- Logging integration (loguru → GUI textbox sink)
+- Progress display during cleaning operations
+- Real-time log display
+- Backup/restore functionality UI
 
 **Key Components:**
 - Program scan: uses `detect_windows.collect_programs()`

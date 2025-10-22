@@ -9,7 +9,7 @@
 - 📚 북마크 삭제 옵션
 - 📥 다운로드 파일 삭제 옵션
 - ↩️ 실행 취소 기능 (백업/복원)
-- 🎨 Material Design UI (PySide6)
+- 🎨 Material Design 3 UI (Flet/Flutter)
 
 ## Download
 
@@ -33,11 +33,12 @@
 # Install dependencies
 uv sync
 
-# Run POC
-uv run python run_poc.py
+# Run Flet UI
+python -m privacy_eraser.ui.main
 
-# Run with hot reload (development mode)
-uv run python dev_server.py
+# Or use entry point
+privacy_eraser
+privacy_eraser_poc
 
 # Run tests
 uv run pytest
@@ -46,30 +47,37 @@ uv run pytest
 ### Build EXE
 
 ```bash
-# Build executable
-scripts/build_exe.bat
+# Build single-file executable (Flet Pack)
+scripts/build_pack.bat
 
-# Output: dist/PrivacyEraser.exe
+# Or auto-release with GitHub
+scripts/release.bat 2.0.1
+
+# Output: dist/PrivacyEraser.exe (single file)
 ```
 
 ## Project Structure
 
 ```
 Privacy-Eraser/
-├── src/privacy_eraser/poc/   # POC implementation
-│   ├── core/                 # Business logic
-│   │   ├── backup_manager.py # Backup/restore engine
-│   │   ├── poc_cleaner.py    # Cleaning engine
-│   │   └── data_config.py    # Browser configurations
-│   ├── ui/                   # PySide6 UI
-│   │   ├── main_window.py    # Main window
-│   │   ├── browser_card.py   # Browser card widget
-│   │   ├── progress_dialog.py # Progress dialog
-│   │   └── undo_dialog.py    # Undo dialog
-│   └── main.py               # Entry point
-├── tests/                    # Test suite
-├── run_poc.py                # Simple launcher
-└── dev_server.py             # Hot reload server
+├── src/privacy_eraser/
+│   ├── core/                 # Core cleaning engine
+│   │   ├── cleaner_engine.py
+│   │   ├── file_utils.py
+│   │   └── windows_utils.py
+│   ├── ui/                   # Flet UI (official GUI)
+│   │   ├── core/             # UI business logic
+│   │   │   ├── backup_manager.py
+│   │   │   ├── browser_info.py
+│   │   │   └── data_config.py
+│   │   └── main.py           # Flet UI entry point
+│   ├── cleaning.py           # Core cleaner engine
+│   ├── detect_windows.py     # Windows browser detection
+│   └── settings_db.py        # Settings persistence
+├── tests/                    # Test suite (22 tests)
+├── scripts/                  # Build scripts (Flet Pack)
+├── main.py                   # Build wrapper entry point
+└── static/images/            # Browser logos
 ```
 
 ## License
@@ -79,7 +87,7 @@ MIT License - See LICENSE file for details
 ## Acknowledgments
 
 - Inspired by [BleachBit](https://www.bleachbit.org/)
-- Icons by [QtAwesome](https://github.com/spyder-ide/qtawesome)
+- UI Framework: [Flet](https://flet.dev/) (Flutter for Python)
 
 ---
 

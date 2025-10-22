@@ -18,13 +18,14 @@ uv run privacy_eraser
 
 ### Running the Application
 ```bash
-# Standard run
-uv run privacy_eraser
+# Flet UI (main application)
+python -m privacy_eraser.ui.main
 
-# Direct module invocation
-uv run python -m privacy_eraser
+# Or using installed script
+privacy_eraser
+privacy_eraser_poc
 
-# From installed script (after uv sync)
+# Or with uv
 uv run privacy_eraser
 ```
 
@@ -81,25 +82,28 @@ uv sync
 ### Windows
 - Primary development platform
 - Full feature set available (registry detection, process checks)
-- CustomTkinter works natively
+- Flet works natively
 
 ### Linux/macOS
-- GUI works (CustomTkinter or tkinter fallback)
-- Detection module (`detect_windows.py`) is no-op (imports guarded)
+- GUI works (Flet cross-platform support)
+- Detection module (`detect_windows.py`) is Windows-only (imports guarded)
 - Cleaning engine works for local file operations
 - Windows-only tests are automatically skipped
 
 ## Debugging
 
-### Enable Debug Panel
-1. Run application: `uv run privacy_eraser`
-2. Click "Show Debug" button in top-right
-3. View:
-   - Variables: app version, Python version, platform, paths
-   - Console: live loguru output
+### Enable Debug Logging
+Set environment variable before running:
+```bash
+# Windows
+set LOGURU_LEVEL=DEBUG && python -m privacy_eraser.ui.main
+
+# Linux/macOS
+LOGURU_LEVEL=DEBUG python -m privacy_eraser.ui.main
+```
 
 ### Increase Log Verbosity
-Edit `src/privacy_eraser/gui.py`:
+Edit `src/privacy_eraser/ui/main.py`:
 ```python
 logger.add(..., level="DEBUG")  # Change from "INFO"
 ```
