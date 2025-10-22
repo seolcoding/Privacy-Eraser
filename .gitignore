@@ -45,6 +45,7 @@ backups/
 
 # Reference/Docs (archived)
 reference/
+references/
 docs/
 proposal_docs/
 claudedocs/
@@ -56,5 +57,4 @@ debug_*.py
 # Archive files
 *.zip
 
-bleachbit/
 test_data/**

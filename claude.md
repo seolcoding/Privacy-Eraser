@@ -365,20 +365,20 @@ Privacy Eraser는 BleachBit의 CleanerML 파일과 코어 삭제 로직을 활�
 
 ### BleachBit 소스코드 참조
 
-**위치**: `src/bleachbit/` (참조용, 커밋하지 않음)
+**위치**: `references/bleachbit/` (참조용, 커밋하지 않음)
 
 ```bash
 # BleachBit 소스코드 가져오기
-cd src
-git clone https://github.com/bleachbit/bleachbit
-cd bleachbit
+git clone https://github.com/bleachbit/bleachbit references/bleachbit
+cd references/bleachbit
 rm -rf .git  # Git 히스토리 제거
 ```
 
 **⚠️ 중요**:
-- `src/bleachbit/` 폴더는 `.gitignore`에 추가되어 있습니다
+- `references/bleachbit/` 폴더는 `.gitignore`에 추가되어 있습니다
 - 이 폴더는 참조용으로만 사용하며, 커밋하지 않습니다
 - 필요한 파일만 `src/privacy_eraser/` 안에 복사해서 사용합니다
+- **빌드 시 포함되지 않음**: src/ 밖에 있어 빌드 사이즈에 영향 없음 (8.3MB 절약)
 
 ### 복사된 BleachBit 리소스
 
@@ -428,13 +428,13 @@ BleachBit의 삭제 엔진을 래핑:
 
 1. **BleachBit에서 CleanerML 파일 확인**
    ```bash
-   # src/bleachbit/cleaners/ 에서 찾기
-   ls src/bleachbit/cleaners/ | grep <browser_name>
+   # references/bleachbit/cleaners/ 에서 찾기
+   ls references/bleachbit/cleaners/ | grep <browser_name>
    ```
 
 2. **CleanerML 파일 복사**
    ```bash
-   cp src/bleachbit/cleaners/<browser_name>.xml src/privacy_eraser/cleaners/
+   cp references/bleachbit/cleaners/<browser_name>.xml src/privacy_eraser/cleaners/
    ```
 
 3. **data_config.py 업데이트**
@@ -466,8 +466,8 @@ Whale처럼 BleachBit에 없는 브라우저는 Chromium 기반 XML을 재사용
 
 ### BleachBit 업데이트 시
 
-1. `src/bleachbit/` 폴더 삭제
-2. 최신 BleachBit 클론
+1. `references/bleachbit/` 폴더 삭제
+2. 최신 BleachBit 클론: `git clone https://github.com/bleachbit/bleachbit references/bleachbit`
 3. 필요한 XML 파일 재복사
 4. 테스트 실행하여 호환성 확인
 
