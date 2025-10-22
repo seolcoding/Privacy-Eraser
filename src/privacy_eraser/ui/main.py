@@ -540,6 +540,11 @@ def main(page: ft.Page):
     page.bgcolor = AppColors.BACKGROUND
     page.theme_mode = ft.ThemeMode.LIGHT
 
+    # Set custom app icon
+    icon_path = get_resource_path("static/icons/app_icon.png")
+    if os.path.exists(icon_path):
+        page.window.icon = icon_path
+
     # ─────────────────────────────────────────────────────────
     # Scheduler Initialization
     # ─────────────────────────────────────────────────────────
@@ -583,6 +588,10 @@ def main(page: ft.Page):
         dev_mode_text.value = "DEV" if new_state else "PROD"
         dev_mode_text.color = "#059669" if new_state else AppColors.TEXT_HINT
         logger.info(f"Mode switched to: {'Development' if new_state else 'Production'}")
+
+        # Toggle warning banner visibility
+        dev_warning_banner.visible = new_state
+        dev_warning_banner.update()
 
         # DEV 모드로 전환 시 더미 데이터 삭제 후 재생성
         if new_state:
@@ -674,6 +683,27 @@ def main(page: ft.Page):
         "삭제할 브라우저를 선택하세요 (설치된 브라우저만 활성화됨)",
         size=13,  # 14 → 13
         color=AppColors.TEXT_SECONDARY,
+    )
+
+    # DEV mode warning banner
+    dev_warning_banner = ft.Container(
+        content=ft.Row(
+            [
+                ft.Icon(ft.Icons.INFO_ROUNDED, color=AppColors.WARNING, size=18),
+                ft.Text(
+                    "개발자 모드: 실제 파일이 삭제되지 않습니다",
+                    size=12,
+                    weight=ft.FontWeight.W_500,
+                    color=AppColors.TEXT_PRIMARY,
+                ),
+            ],
+            spacing=8,
+            alignment=ft.MainAxisAlignment.CENTER,
+        ),
+        bgcolor=f"{AppColors.WARNING}20",  # 20% opacity
+        padding=ft.padding.symmetric(vertical=8, horizontal=12),
+        border_radius=6,
+        visible=AppConfig.is_dev_mode(),  # Only show in DEV mode
     )
 
     # Browser cards container (2x4 그리드)
@@ -2386,6 +2416,7 @@ def main(page: ft.Page):
         [
             title_row,
             subtitle,
+            dev_warning_banner,  # DEV mode warning
             ft.Container(height=12),  # Spacing (16 → 12)
             loading_container,  # Will be replaced with browser_grid
             ft.Container(height=20),  # Spacing (32 → 20)

@@ -28,6 +28,7 @@ product = "Privacy Eraser"
 company = "seolcoding"
 copyright = "Copyright (C) 2025 seolcoding.com"
 build_number = 1
+icon = "static/icons/app_icon.ico"
 
 [build-system]
 requires = ["hatchling>=1.24"]
