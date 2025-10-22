@@ -1,19 +1,20 @@
 """POC용 삭제 대상 정의 및 브라우저 설정"""
 
+import os
+from pathlib import Path
+
 # ═════════════════════════════════════════════════════════════
 # 삭제 대상 옵션
 # ═════════════════════════════════════════════════════════════
 
-# 기본 삭제 대상 (항상 삭제, 북마크 제외)
+# 기본 삭제 대상 (개인정보만 삭제, 캐시 제외)
+# 캐시 파일(이미지 등)은 개인정보가 아니므로 기본적으로 삭제하지 않음
 DEFAULT_CLEANER_OPTIONS = [
-    "cache",  # 캐시 파일
     "cookies",  # 쿠키
     "history",  # 브라우징 히스토리
     "session",  # 세션 데이터
     "passwords",  # 저장된 비밀번호
     "form_history",  # 자동완성 데이터
-    "cookies_session",  # 세션 쿠키
-    "localstore",  # 로컬 저장소
 ]
 
 # 북마크 옵션 (토글 활성화 시만 삭제)
@@ -38,14 +39,21 @@ EXCLUDE_OPTIONS = [
 # 브라우저별 CleanerML 파일 매핑
 # ═════════════════════════════════════════════════════════════
 
+def _get_cleaner_xml_path(filename: str) -> str:
+    """Get absolute path to CleanerML file"""
+    # Get package root directory (privacy_eraser/)
+    package_root = Path(__file__).parent.parent.parent
+    xml_path = package_root / "cleaners" / filename
+    return str(xml_path.absolute())
+
 CLEANER_XML_MAP = {
-    "chrome": "bleachbit/cleaners/chrome.xml",
-    "edge": "bleachbit/cleaners/chrome.xml",  # Chromium 기반
-    "firefox": "bleachbit/cleaners/firefox.xml",
-    "brave": "bleachbit/cleaners/brave.xml",
-    "opera": "bleachbit/cleaners/opera.xml",
-    "whale": "bleachbit/cleaners/chrome.xml",  # Chromium 기반
-    "safari": "bleachbit/cleaners/safari.xml",
+    "chrome": _get_cleaner_xml_path("google_chrome.xml"),
+    "edge": _get_cleaner_xml_path("microsoft_edge.xml"),
+    "firefox": _get_cleaner_xml_path("firefox.xml"),
+    "brave": _get_cleaner_xml_path("brave.xml"),
+    "opera": _get_cleaner_xml_path("opera.xml"),
+    "whale": _get_cleaner_xml_path("google_chrome.xml"),  # Chromium 기반, whale.xml 없음
+    "safari": _get_cleaner_xml_path("safari.xml"),
 }
 
 # ═════════════════════════════════════════════════════════════

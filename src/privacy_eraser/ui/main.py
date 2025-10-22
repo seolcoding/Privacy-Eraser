@@ -15,6 +15,7 @@ import webbrowser
 import os
 import sys
 import glob
+import subprocess
 
 from privacy_eraser.detect_windows import detect_browsers
 from privacy_eraser.ui.core.browser_info import BrowserInfo, CleaningStats
@@ -24,6 +25,7 @@ from privacy_eraser.ui.core.data_config import (
     get_browser_display_name,
     get_browser_xml_path,
     get_cleaner_options,
+    BROWSER_PROCESSES,
 )
 from privacy_eraser.ui.core.backup_manager import BackupManager
 from privacy_eraser.core.schedule_manager import ScheduleManager, ScheduleScenario
@@ -58,6 +60,7 @@ class AppColors:
     SURFACE = "#FFFFFF"
     PRIMARY = "#2563EB"
     DANGER = "#DC2626"
+    WARNING = "#F59E0B"  # Amber/Orange for warnings
     SUCCESS = "#059669"
     TEXT_PRIMARY = "#1A1A1A"
     TEXT_SECONDARY = "#666666"
@@ -65,6 +68,90 @@ class AppColors:
     BORDER = "#E5E5E5"
     BORDER_HOVER = "#CCCCCC"
     BORDER_SELECTED = "#2563EB"
+
+
+# ═════════════════════════════════════════════════════════════
+# Browser Process Management
+# ═════════════════════════════════════════════════════════════
+
+
+def check_running_browsers(browsers: list[str]) -> list[str]:
+    """Check which browsers are currently running
+
+    Args:
+        browsers: List of browser names to check
+
+    Returns:
+        List of running browser names
+    """
+    running = []
+
+    try:
+        # Get list of running processes (Windows)
+        result = subprocess.run(
+            ['tasklist', '/FO', 'CSV', '/NH'],
+            capture_output=True,
+            text=True,
+            creationflags=subprocess.CREATE_NO_WINDOW
+        )
+
+        if result.returncode == 0:
+            running_processes = result.stdout.lower()
+
+            for browser in browsers:
+                browser_lower = browser.lower()
+                if browser_lower in BROWSER_PROCESSES:
+                    process_names = BROWSER_PROCESSES[browser_lower]
+                    for process_name in process_names:
+                        if process_name.lower() in running_processes:
+                            running.append(browser)
+                            break  # Found one process for this browser
+    except Exception as e:
+        logger.warning(f"Failed to check running browsers: {e}")
+
+    return running
+
+
+def kill_browser_processes(browsers: list[str]) -> tuple[int, list[str]]:
+    """Force kill browser processes
+
+    Args:
+        browsers: List of browser names to terminate
+
+    Returns:
+        Tuple of (killed_count, failed_browsers)
+    """
+    killed_count = 0
+    failed = []
+
+    for browser in browsers:
+        browser_lower = browser.lower()
+        if browser_lower not in BROWSER_PROCESSES:
+            continue
+
+        process_names = BROWSER_PROCESSES[browser_lower]
+        browser_killed = False
+
+        for process_name in process_names:
+            try:
+                result = subprocess.run(
+                    ['taskkill', '/F', '/IM', process_name],
+                    capture_output=True,
+                    text=True,
+                    creationflags=subprocess.CREATE_NO_WINDOW
+                )
+
+                if result.returncode == 0:
+                    logger.info(f"Killed browser process: {process_name}")
+                    browser_killed = True
+                    killed_count += 1
+            except Exception as e:
+                logger.warning(f"Failed to kill {process_name}: {e}")
+
+        if not browser_killed:
+            failed.append(browser)
+
+    return killed_count, failed
 
 
 # ═════════════════════════════════════════════════════════════
@@ -260,18 +347,20 @@ class FletCleanerWorker(threading.Thread):
                 logger.warning(f"CleanerML 경로 없음: {browser_name}")
                 return files
 
-            from privacy_eraser.cleanerml_loader import load_cleanerml
+            from privacy_eraser.cleanerml_loader import load_cleaner_options_from_file
 
-            cleaner_def = load_cleanerml(xml_path)
+            cleaner_options = load_cleaner_options_from_file(xml_path)
 
-            for option in options:
+            for option_id in options:
                 try:
-                    actions = cleaner_def.get_actions(option)
-                    for action in actions:
-                        expanded = self._expand_path(action.path)
-                        files.extend(expanded)
+                    # Find matching CleanerOption by ID
+                    matching_option = next((opt for opt in cleaner_options if opt.id == option_id), None)
+                    if matching_option:
+                        for action in matching_option.actions:
+                            expanded = self._expand_path(action.path)
+                            files.extend(expanded)
                 except Exception as e:
-                    logger.debug(f"옵션 {option} 처리 실패: {e}")
+                    logger.debug(f"옵션 {option_id} 처리 실패: {e}")
 
         except Exception as e:
             logger.warning(f"{browser_name} CleanerML 처리 실패: {e}")
@@ -1081,6 +1170,26 @@ def main(page: ft.Page):
         # 컨텐츠 구성 (10% 여백 증가)
         content_column = ft.Column(
             [
+                # ⚠️ 브라우저 강제 종료 경고
+                ft.Container(
+                    content=ft.Row(
+                        [
+                            ft.Icon(ft.icons.WARNING_AMBER_ROUNDED, color=AppColors.WARNING, size=16),
+                            ft.Text(
+                                "선택한 브라우저가 강제 종료됩니다",
+                                size=10,
+                                weight=ft.FontWeight.W_500,
+                                color=AppColors.WARNING,
+                            ),
+                        ],
+                        spacing=6,
+                        tight=True,
+                    ),
+                    bgcolor=f"{AppColors.WARNING}15",  # 15% opacity
+                    padding=8,
+                    border_radius=6,
+                    margin=ft.margin.only(bottom=10),
+                ),
                 ft.Text(
                     "다음 브라우저의 데이터가 삭제됩니다:",
                     size=11,
@@ -1150,9 +1259,24 @@ def main(page: ft.Page):
         page.open(confirm_dialog)
 
     def confirm_and_start_cleaning(dialog, selected_browsers_list: list[str]):
-        """Confirmed - close dialog and start cleaning"""
+        """Confirmed - close dialog, kill browser processes, and start cleaning"""
         close_dialog(dialog)
         logger.info(f"User confirmed deletion for: {', '.join(selected_browsers_list)}")
+
+        # Check and kill running browser processes
+        running_browsers = check_running_browsers(selected_browsers_list)
+        if running_browsers:
+            logger.info(f"Killing running browsers: {', '.join(running_browsers)}")
+            killed_count, failed = kill_browser_processes(running_browsers)
+
+            if killed_count > 0:
+                logger.info(f"Successfully killed {killed_count} browser process(es)")
+            if failed:
+                logger.warning(f"Failed to kill browsers: {', '.join(failed)}")
+
+            # Wait a moment for processes to fully terminate
+            time.sleep(0.5)
+
         show_progress_dialog(selected_browsers_list)
 
     def show_schedule_dialog():
