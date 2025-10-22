@@ -589,9 +589,9 @@ def main(page: ft.Page):
         dev_mode_text.color = "#059669" if new_state else AppColors.TEXT_HINT
         logger.info(f"Mode switched to: {'Development' if new_state else 'Production'}")
 
-        # Toggle warning banner visibility
-        dev_warning_banner.visible = new_state
-        dev_warning_banner.update()
+        # Toggle warning text visibility
+        dev_warning_text.visible = new_state
+        dev_warning_text.update()
 
         # DEV 모드로 전환 시 더미 데이터 삭제 후 재생성
         if new_state:
@@ -654,12 +654,22 @@ def main(page: ft.Page):
         color="#059669" if AppConfig.is_dev_mode() else AppColors.TEXT_HINT,
     )
 
+    # Warning text (visible only in DEV mode)
+    dev_warning_text = ft.Text(
+        "실제 파일이 삭제되지 않습니다",
+        size=11,
+        weight=ft.FontWeight.W_500,
+        color=AppColors.DANGER,
+        visible=AppConfig.is_dev_mode(),
+    )
+
     dev_mode_container = ft.Row(
         [
+            dev_warning_text,
             dev_mode_text,
             dev_mode_switch,
         ],
-        spacing=6,
+        spacing=8,
         alignment=ft.MainAxisAlignment.END,
     )
 
@@ -693,27 +703,6 @@ def main(page: ft.Page):
         ],
         spacing=6,
         alignment=ft.MainAxisAlignment.CENTER,
-    )
-
-    # DEV mode warning banner
-    dev_warning_banner = ft.Container(
-        content=ft.Row(
-            [
-                ft.Icon(ft.Icons.INFO_ROUNDED, color=AppColors.WARNING, size=18),
-                ft.Text(
-                    "개발자 모드: 실제 파일이 삭제되지 않습니다",
-                    size=12,
-                    weight=ft.FontWeight.W_500,
-                    color=AppColors.TEXT_PRIMARY,
-                ),
-            ],
-            spacing=8,
-            alignment=ft.MainAxisAlignment.CENTER,
-        ),
-        bgcolor=f"{AppColors.WARNING}20",  # 20% opacity
-        padding=ft.padding.symmetric(vertical=8, horizontal=12),
-        border_radius=6,
-        visible=AppConfig.is_dev_mode(),  # Only show in DEV mode
     )
 
     # Browser cards container (2x4 그리드)
@@ -2427,7 +2416,6 @@ def main(page: ft.Page):
         [
             title_row,
             subtitle_row,
-            dev_warning_banner,  # DEV mode warning
             ft.Container(height=12),  # Spacing (16 → 12)
             browser_grid,  # Browser cards grid
             ft.Container(height=20),  # Spacing (32 → 20)
