@@ -1174,7 +1174,7 @@ def main(page: ft.Page):
                 ft.Container(
                     content=ft.Row(
                         [
-                            ft.Icon(ft.icons.WARNING_AMBER_ROUNDED, color=AppColors.WARNING, size=16),
+                            ft.Icon(ft.Icons.WARNING_AMBER_ROUNDED, color=AppColors.WARNING, size=16),
                             ft.Text(
                                 "선택한 브라우저가 강제 종료됩니다",
                                 size=10,
