@@ -9,7 +9,7 @@ from pathlib import Path
 from loguru import logger
 
 from privacy_eraser.config import AppConfig
-from privacy_eraser.ui.core.schedule_manager import ScheduleScenario
+from privacy_eraser.core.schedule_manager import ScheduleScenario
 from privacy_eraser.notification_manager import (
     show_dev_notification,
     show_prod_notification,

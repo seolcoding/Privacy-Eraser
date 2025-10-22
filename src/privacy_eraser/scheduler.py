@@ -12,7 +12,7 @@ from apscheduler.triggers.interval import IntervalTrigger
 from apscheduler.triggers.date import DateTrigger
 
 from privacy_eraser.config import AppConfig
-from privacy_eraser.ui.core.schedule_manager import ScheduleManager, ScheduleScenario
+from privacy_eraser.core.schedule_manager import ScheduleManager, ScheduleScenario
 from privacy_eraser.schedule_executor import execute_scenario
 
 

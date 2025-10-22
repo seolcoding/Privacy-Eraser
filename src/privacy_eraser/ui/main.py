@@ -26,7 +26,7 @@ from privacy_eraser.ui.core.data_config import (
     get_cleaner_options,
 )
 from privacy_eraser.ui.core.backup_manager import BackupManager
-from privacy_eraser.ui.core.schedule_manager import ScheduleManager, ScheduleScenario
+from privacy_eraser.core.schedule_manager import ScheduleManager, ScheduleScenario
 from privacy_eraser.config import AppConfig
 
 
