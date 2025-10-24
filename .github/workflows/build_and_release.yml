@@ -44,193 +44,127 @@ jobs:
           path: ~\AppData\Local\flet\bin\flutter
           key: ${{ runner.os }}-flutter-0.28.3
 
-      - name: Install dependencies
-        shell: pwsh
+      # STEP 1-3: Build using EXACT release_flutter.bat logic (CMD/Batch)
+      - name: Build with release_flutter.bat logic
+        shell: cmd
         run: |
-          Write-Host "============================================" -ForegroundColor Cyan
-          Write-Host "STEP 1: Installing dependencies" -ForegroundColor Cyan
-          Write-Host "============================================" -ForegroundColor Cyan
+          REM ============================================
+          REM EXACT COPY of release_flutter.bat Steps 1-2
+          REM ============================================
           
+          REM Set UTF-8 encoding
+          chcp 65001 >nul
+          set PYTHONIOENCODING=utf-8
+          set PYTHONUTF8=1
+          
+          echo ============================================
+          echo STEP 1: Installing dependencies
+          echo ============================================
           uv sync --all-extras
-          if ($LASTEXITCODE -ne 0) {
-            Write-Error "Dependency installation failed!"
-            exit 1
-          }
-          Write-Host "[✓] Dependencies installed" -ForegroundColor Green
-
-      - name: Verify build environment
-        shell: pwsh
-        run: |
-          Write-Host "============================================" -ForegroundColor Cyan
-          Write-Host "STEP 2: Verifying environment" -ForegroundColor Cyan
-          Write-Host "============================================" -ForegroundColor Cyan
+          if %errorlevel% neq 0 (
+            echo [ERROR] Dependency installation failed!
+            exit /b 1
+          )
+          echo [OK] Dependencies installed
           
-          if (Test-Path "src\.venv") {
-            Write-Error ".venv found in src/ directory!"
-            exit 1
-          }
-          Write-Host "[✓] src/ directory is clean" -ForegroundColor Green
+          echo.
+          echo ============================================
+          echo STEP 2: Verifying environment
+          echo ============================================
           
-          Write-Host "`nCurrent directory structure:"
-          Get-ChildItem -Force | Select-Object Mode, Name | Format-Table -AutoSize
+          REM Verify src/ is clean (same as release_flutter.bat line 106-124)
+          if exist "src\.venv" (
+            echo [ERROR] .venv found in src/
+            exit /b 1
+          )
+          if exist "src\venv" (
+            echo [ERROR] venv found in src/
+            exit /b 1
+          )
+          echo [OK] src/ is clean
           
-          @("build\windows", "src\build\windows") | ForEach-Object {
-            if (Test-Path $_) {
-              Write-Host "Cleaning old build: $_"
-              Remove-Item $_ -Recurse -Force
-            }
-          }
-          Write-Host "[✓] Old builds cleaned" -ForegroundColor Green
-
-      - name: Build with Flet
-        shell: pwsh
-        env:
-          PYTHONIOENCODING: utf-8
-          PYTHONUTF8: 1
-        run: |
-          Write-Host "============================================" -ForegroundColor Cyan
-          Write-Host "STEP 3: Building with Flet" -ForegroundColor Cyan
-          Write-Host "============================================" -ForegroundColor Cyan
+          REM Clean previous builds (same as release_flutter.bat line 96-97)
+          if exist "build\windows" rmdir /s /q "build\windows"
+          if exist "src\build\windows" rmdir /s /q "src\build\windows"
+          echo [OK] Previous builds cleaned
           
-          [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-          $env:PYTHONIOENCODING = "utf-8"
+          echo.
+          echo ============================================
+          echo STEP 3: Building with Flet
+          echo ============================================
           
-          Write-Host "Current location: $(Get-Location)"
-          Write-Host "Building from src/ directory...`n"
+          echo Current directory:
+          cd
           
-          Set-Location src
-          Write-Host "Executing: uv run flet build windows --exclude .venv --exclude venv --exclude __pycache__ --exclude tests`n"
-          
+          REM Build (EXACT same as release_flutter.bat line 133-141)
+          cd src
+          echo Building from src/ directory...
           uv run flet build windows --exclude ".venv" --exclude "venv" --exclude "__pycache__" --exclude "tests"
           
-          $buildExitCode = $LASTEXITCODE
-          Set-Location ..
+          if %errorlevel% neq 0 (
+            echo [ERROR] Build failed!
+            cd ..
+            exit /b 1
+          )
           
-          if ($buildExitCode -ne 0) {
-            Write-Error "Flet build command failed with exit code: $buildExitCode"
-            exit 1
-          }
+          REM Move build output (EXACT same as release_flutter.bat line 144-146)
+          if exist "build\windows" (
+            echo Moving build output to project root...
+            move "build\windows" "..\build\windows" >nul
+          )
+          cd ..
           
-          Write-Host "`n[✓] Flet build command completed" -ForegroundColor Green
+          REM Verify build exists (same as release_flutter.bat line 150-155)
+          if not exist "build\windows" (
+            echo [ERROR] Build directory is missing!
+            exit /b 1
+          )
+          
+          echo [OK] Build successful at build\windows
+          
+          REM Show build contents for debugging
+          echo.
+          echo Build directory contents:
+          dir build\windows
 
-      - name: Locate and prepare build output
+      # STEP 4: Locate and verify build (PowerShell for better output)
+      - name: Verify build output
         shell: pwsh
         run: |
           Write-Host "============================================" -ForegroundColor Cyan
-          Write-Host "STEP 4: Locating build output" -ForegroundColor Cyan
+          Write-Host "STEP 4: Verifying build output" -ForegroundColor Cyan
           Write-Host "============================================" -ForegroundColor Cyan
           
-          $possibleLocations = @(
-            "build\windows",
-            "src\build\windows",
-            "dist\windows",
-            "src\dist\windows"
-          )
-          
-          Write-Host "`nSearching in known locations:"
-          $foundLocation = $null
-          
-          foreach ($loc in $possibleLocations) {
-            Write-Host "  Checking: $loc ... " -NoNewline
-            if (Test-Path $loc) {
-              Write-Host "[FOUND]" -ForegroundColor Green
-              $foundLocation = $loc
-              
-              $itemCount = (Get-ChildItem $loc).Count
-              Write-Host "    Contents: $itemCount items"
-              Get-ChildItem $loc -Name | ForEach-Object { Write-Host "      - $_" }
-              break
-            } else {
-              Write-Host "[NOT FOUND]" -ForegroundColor DarkGray
-            }
-          }
-          
-          if (-not $foundLocation) {
-            Write-Host "`n[!] Not found in known locations. Searching entire directory tree..." -ForegroundColor Yellow
+          if (-not (Test-Path "build\windows")) {
+            Write-Error "Build directory not found!"
             
-            $allWindowsDirs = Get-ChildItem -Path . -Filter "windows" -Recurse -Directory -ErrorAction SilentlyContinue | 
-              Where-Object { $_.FullName -notmatch '\.venv|node_modules|\.git' }
-            
-            if ($allWindowsDirs) {
-              Write-Host "`nFound 'windows' directories:"
-              foreach ($dir in $allWindowsDirs) {
-                $relPath = $dir.FullName.Replace((Get-Location).Path + "\", "")
-                Write-Host "  - $relPath"
-                
-                $exePath = Join-Path $dir.FullName "privacy_eraser.exe"
-                $dataPath = Join-Path $dir.FullName "data"
-                
-                if ((Test-Path $exePath) -or (Test-Path $dataPath)) {
-                  Write-Host "    [!] This looks like a build output!" -ForegroundColor Yellow
-                  $foundLocation = $relPath
-                  break
-                }
-              }
-            }
-          }
-          
-          if ($foundLocation) {
-            Write-Host "`n============================================" -ForegroundColor Cyan
-            Write-Host "BUILD OUTPUT FOUND: $foundLocation" -ForegroundColor Green
-            Write-Host "============================================" -ForegroundColor Cyan
-            
-            $targetLocation = "build\windows"
-            
-            if ($foundLocation -ne $targetLocation) {
-              Write-Host "`nMoving to standard location: $targetLocation"
-              
-              $targetParent = Split-Path $targetLocation -Parent
-              if ($targetParent -and -not (Test-Path $targetParent)) {
-                New-Item -ItemType Directory -Path $targetParent -Force | Out-Null
-              }
-              
-              if (Test-Path $targetLocation) {
-                Remove-Item $targetLocation -Recurse -Force
-              }
-              
-              Move-Item $foundLocation $targetLocation -Force
-              
-              if (Test-Path $targetLocation) {
-                Write-Host "[✓] Successfully moved to $targetLocation" -ForegroundColor Green
-              } else {
-                Write-Error "Failed to move build output!"
-                exit 1
-              }
-            } else {
-              Write-Host "[✓] Build already at correct location" -ForegroundColor Green
-            }
-            
-            if (Test-Path $targetLocation) {
-              $buildSize = (Get-ChildItem $targetLocation -Recurse | Measure-Object -Property Length -Sum).Sum / 1MB
-              $fileCount = (Get-ChildItem $targetLocation -Recurse -File).Count
-              
-              Write-Host "`nBuild statistics:"
-              Write-Host "  Location: $targetLocation"
-              Write-Host "  Size: $([math]::Round($buildSize, 2)) MB"
-              Write-Host "  Files: $fileCount"
-              
-              $mainExe = Join-Path $targetLocation "privacy_eraser.exe"
-              if (Test-Path $mainExe) {
-                $exeSize = (Get-Item $mainExe).Length / 1MB
-                Write-Host "  Main EXE: $([math]::Round($exeSize, 2)) MB"
-                Write-Host "[✓] Build verification passed" -ForegroundColor Green
-              } else {
-                Write-Warning "privacy_eraser.exe not found in build output"
-              }
-            }
-          } else {
-            Write-Host "`n============================================" -ForegroundColor Red
-            Write-Host "ERROR: Build output not found anywhere!" -ForegroundColor Red
-            Write-Host "============================================" -ForegroundColor Red
-            
-            Write-Host "`nComplete directory structure:"
-            Get-ChildItem -Recurse -Directory | Where-Object { 
-              $_.FullName -notmatch '\.venv|\.git|node_modules' 
-            } | Select-Object FullName | Format-Table -AutoSize
+            Write-Host "`nSearching for build output..."
+            Get-ChildItem -Recurse -Directory -Filter "windows" | 
+              Where-Object { $_.FullName -notmatch '\.venv|\.git' } |
+              ForEach-Object { Write-Host "  Found: $($_.FullName)" }
             
             exit 1
           }
+          
+          $buildSize = (Get-ChildItem "build\windows" -Recurse | Measure-Object -Property Length -Sum).Sum / 1MB
+          $fileCount = (Get-ChildItem "build\windows" -Recurse -File).Count
+          
+          Write-Host "`nBuild statistics:"
+          Write-Host "  Location: build\windows"
+          Write-Host "  Size: $([math]::Round($buildSize, 2)) MB"
+          Write-Host "  Files: $fileCount"
+          
+          if (Test-Path "build\windows\privacy_eraser.exe") {
+            $exeSize = (Get-Item "build\windows\privacy_eraser.exe").Length / 1MB
+            Write-Host "  Main EXE: $([math]::Round($exeSize, 2)) MB"
+            Write-Host "[✓] Build verification passed" -ForegroundColor Green
+          } else {
+            Write-Warning "privacy_eraser.exe not found!"
+            Write-Host "`nContents of build\windows:"
+            Get-ChildItem "build\windows" -Name
+          }
 
+      # STEP 5: Remove app.zip
       - name: Remove app.zip
         shell: pwsh
         run: |
@@ -248,17 +182,12 @@ jobs:
             Write-Host "[✓] Removed app.zip (saved $([math]::Round($beforeMB, 2)) MB)" -ForegroundColor Green
           } else {
             Write-Host "[i] app.zip not found (Flet 0.28+ may use unpacked packages)" -ForegroundColor Yellow
-            
-            $packagesPath = "build\windows\data\flutter_assets\packages"
-            if (Test-Path $packagesPath) {
-              $packagesMB = (Get-ChildItem $packagesPath -Recurse | Measure-Object -Property Length -Sum).Sum / 1MB
-              Write-Host "    Unpacked packages: $([math]::Round($packagesMB, 2)) MB"
-            }
           }
           
           $finalMB = (Get-ChildItem "build\windows" -Recurse | Measure-Object -Property Length -Sum).Sum / 1MB
-          Write-Host "`n[✓] Final build size: $([math]::Round($finalMB, 2)) MB" -ForegroundColor Green
+          Write-Host "[✓] Final build size: $([math]::Round($finalMB, 2)) MB" -ForegroundColor Green
 
+      # STEP 6: Get version
       - name: Determine version
         id: version
         shell: pwsh
@@ -274,6 +203,7 @@ jobs:
           echo "version=$version" >> $env:GITHUB_OUTPUT
           Write-Host "Version: $version" -ForegroundColor Cyan
 
+      # STEP 7: Create ZIP
       - name: Create distribution ZIP
         id: create_zip
         shell: pwsh
@@ -298,6 +228,7 @@ jobs:
           echo "zip_name=$zipName" >> $env:GITHUB_OUTPUT
           echo "zip_size_mb=$([math]::Round($sizeMB, 2))" >> $env:GITHUB_OUTPUT
 
+      # STEP 8: Verify size
       - name: Verify distribution size
         shell: pwsh
         run: |
@@ -345,4 +276,5 @@ jobs:
           Write-Host "Version: ${{ steps.version.outputs.version }}"
           Write-Host "Package: ${{ steps.create_zip.outputs.zip_name }}"
           Write-Host "Size: ${{ steps.create_zip.outputs.zip_size_mb }} MB"
-          Write-Host "============================================`n" -ForegroundColor Green
+          Write-Host "Build Method: release_flutter.bat (CMD)" -ForegroundColor Yellow
+          Write-Host "============================================`n" -ForegroundC
