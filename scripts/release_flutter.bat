@@ -227,7 +227,33 @@ if not exist "%ZIP_NAME%" (
 REM Calculate SHA256 hash
 powershell -Command "Get-FileHash '%ZIP_NAME%' -Algorithm SHA256 | ForEach-Object { \"$($_.Hash)  %ZIP_NAME%\" } | Out-File '%ZIP_NAME%.sha256' -Encoding ascii"
 
-echo   [OK] ZIP created: %ZIP_NAME%
+REM ============================================================
+REM CRITICAL: Verify final ZIP size (must be under 200MB)
+REM ============================================================
+echo   [CHECK] Verifying distribution size...
+
+REM Get ZIP size in MB
+for %%A in ("%ZIP_NAME%") do set ZIP_SIZE=%%~zA
+set /a ZIP_SIZE_MB=%ZIP_SIZE% / 1048576
+
+echo   Distribution size: %ZIP_SIZE_MB% MB
+echo   Maximum allowed: 200 MB
+
+if %ZIP_SIZE_MB% GTR 200 (
+    echo.
+    echo ============================================================
+    echo [ERROR] Distribution ZIP is too large! (%ZIP_SIZE_MB% MB^)
+    echo Maximum allowed: 200 MB
+    echo.
+    echo This indicates build optimization failed.
+    echo Check KNOWN_ISSUES.md for troubleshooting.
+    echo ============================================================
+    pause
+    exit /b 1
+)
+
+echo   [OK] Distribution size is acceptable
+echo   [OK] ZIP created: %ZIP_NAME% (%ZIP_SIZE_MB% MB)
 echo   [OK] Hash file: %ZIP_NAME%.sha256
 echo.
 
