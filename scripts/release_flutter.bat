@@ -96,11 +96,40 @@ REM Clean previous builds (both root and src)
 if exist "build\windows" rmdir /s /q "build\windows"
 if exist "src\build\windows" rmdir /s /q "src\build\windows"
 
+REM ============================================================
+REM CRITICAL: Verify src/ directory is clean before build
+REM ============================================================
+REM If .venv or venv exists in src/, it will be packaged into app.zip (1.2GB bloat!)
+REM See: KNOWN_ISSUES.md for details
+echo   [CHECK] Verifying src/ directory is clean...
+
+if exist "src\.venv" (
+    echo [ERROR] .venv directory found in src/!
+    echo This will cause app.zip to bloat to 1.2GB+
+    echo Please remove src\.venv before building
+    echo.
+    echo Solution: Delete src\.venv directory
+    pause
+    exit /b 1
+)
+
+if exist "src\venv" (
+    echo [ERROR] venv directory found in src/!
+    echo This will cause app.zip to bloat to 1.2GB+
+    echo Please remove src\venv before building
+    echo.
+    echo Solution: Delete src\venv directory
+    pause
+    exit /b 1
+)
+
+echo   [OK] src/ directory is clean (no .venv, venv found)
+
 REM Build with Flet Build (Flutter-based, uses pyproject.toml settings)
 REM Build from src/ directory to minimize package size (only includes src/)
-REM Added size optimization flags:
-REM   --exclude: Exclude .venv, __pycache__, tests (redundant with pyproject.toml but explicit)
-REM   Note: pyproject.toml [tool.flet] exclude is the primary configuration
+REM FIXED: exclude patterns now in [tool.flet.app] section of pyproject.toml
+REM   This ensures exclusions are applied to app.zip packaging
+REM   --exclude flags below are redundant but explicit for safety
 cd src
 uv run flet build windows --exclude ".venv" --exclude "venv" --exclude "__pycache__" --exclude "tests"
 
@@ -126,6 +155,46 @@ if not exist "build\windows" (
 )
 
 echo   [OK] Build successful (Flutter/onedir)
+
+REM ============================================================
+REM CRITICAL: Verify app.zip size
+REM ============================================================
+REM app.zip should be small (~5-20MB). If it's >100MB, .venv was packaged!
+echo   [CHECK] Verifying app.zip size...
+
+set APP_ZIP_PATH=build\windows\data\flutter_assets\app.zip
+
+if not exist "%APP_ZIP_PATH%" (
+    echo [WARNING] app.zip not found at expected location
+    echo Expected: %APP_ZIP_PATH%
+    echo This is okay if Flet 0.27.0+ uses unpacked site packages
+) else (
+    REM Check app.zip size (in bytes)
+    for %%A in ("%APP_ZIP_PATH%") do set APP_ZIP_SIZE=%%~zA
+
+    REM Convert to MB for display (approximate)
+    set /a APP_ZIP_SIZE_MB=%APP_ZIP_SIZE% / 1048576
+
+    echo   app.zip size: %APP_ZIP_SIZE_MB% MB
+
+    REM If app.zip is larger than 100MB, something is wrong
+    if %APP_ZIP_SIZE_MB% GTR 100 (
+        echo [ERROR] app.zip is too large (%APP_ZIP_SIZE_MB% MB^)!
+        echo This indicates .venv or dev files were packaged
+        echo Expected size: 5-20 MB
+        echo.
+        echo Possible causes:
+        echo   - .venv exists in src/ directory
+        echo   - pyproject.toml exclude patterns not working
+        echo   - Flet version issue
+        echo.
+        echo See KNOWN_ISSUES.md for troubleshooting
+        pause
+        exit /b 1
+    )
+
+    echo   [OK] app.zip size is acceptable
+)
 echo.
 
 REM ============================================================

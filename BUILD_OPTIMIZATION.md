@@ -105,6 +105,11 @@ uv run flet build windows --exclude ".venv" --exclude "venv" --exclude "__pycach
 scripts\release_flutter.bat 2.0.0
 ```
 
+**New in v2.1.0+:**
+- Automated src/ directory verification (fails if .venv detected)
+- Post-build app.zip size validation (<100MB check)
+- [tool.flet.app] exclude configuration for proper app.zip packaging
+
 ## FAQ: Common Concerns
 
 ### Q: ".venv 제외하면 라이브러리가 포함되지 않나요?"
@@ -170,7 +175,12 @@ flet build windows (pyproject.toml 읽기)
 
 ## Changelog
 
-### 2025-10-24
+### 2025-10-24 (Critical Update)
+- **FIXED:** app.zip bloat issue (1.2GB → expected 5-20MB)
+  - Moved exclude patterns from `[tool.flet]` to `[tool.flet.app]` section
+  - Added pre-build verification: fails if src/.venv exists
+  - Added post-build validation: fails if app.zip >100MB
+  - See KNOWN_ISSUES.md for details
 - Enhanced `pyproject.toml` exclude patterns (recursive exclusion)
 - Added explicit `--exclude` flags to build script
 - Documented optimization strategy and expected results

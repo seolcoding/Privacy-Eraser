@@ -30,8 +30,13 @@ copyright = "Copyright (C) 2025 seolcoding.com"
 build_number = 1
 icon = "static/icons/app_icon.ico"
 
+# CRITICAL FIX: Moved exclude to [tool.flet.app] section
+# This ensures exclusions are applied to app.zip packaging
+# See: KNOWN_ISSUES.md for details on 1.2GB app.zip problem
+
+[tool.flet.app]
 # Exclude unnecessary files from build to reduce size
-# CRITICAL: Prevents .venv and development files from being packaged
+# CRITICAL: Prevents .venv and development files from being packaged into app.zip
 exclude = [
     # Virtual environments (MUST exclude to reduce size)
     ".venv/**/*",
@@ -63,6 +68,8 @@ exclude = [
     "claude.md",
     "README.md",
     "RELEASE_NOTES.md",
+    "BUILD_OPTIMIZATION.md",
+    "KNOWN_ISSUES.md",
 
     # Test files
     "test_data/**/*",
@@ -83,6 +90,11 @@ exclude = [
     "*.tmp",
     "*.zip",
     "*.sha256",
+
+    # Project metadata (not needed in production)
+    "pyproject.toml",
+    "uv.lock",
+    ".python-version",
 ]
 
 [build-system]
