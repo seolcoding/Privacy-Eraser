@@ -30,24 +30,71 @@ copyright = "Copyright (C) 2025 seolcoding.com"
 build_number = 1
 icon = "static/icons/app_icon.ico"
 
+# CRITICAL FIX: Moved exclude to [tool.flet.app] section
+# This ensures exclusions are applied to app.zip packaging
+# See: KNOWN_ISSUES.md for details on 1.2GB app.zip problem
+
+[tool.flet.app]
 # Exclude unnecessary files from build to reduce size
+# CRITICAL: Prevents .venv and development files from being packaged into app.zip
 exclude = [
-    "test_data",
-    ".git",
+    # Virtual environments (MUST exclude to reduce size)
+    ".venv/**/*",
+    "venv/**/*",
     ".venv",
     "venv",
-    ".claude",
-    ".vscode",
-    ".idea",
-    ".cursor",
-    "references",
-    "reference",
-    "docs",
-    "scripts/generate_test_data.py",
-    "scripts/generate_icon.py",
+    "__pycache__/**/*",
+    "*.pyc",
+    "*.pyo",
+    "*.pyd",
+
+    # Version control and configs
+    ".git/**/*",
+    ".gitignore",
+    ".gitattributes",
+
+    # Editor/IDE files
+    ".claude/**/*",
+    ".vscode/**/*",
+    ".idea/**/*",
+    ".cursor/**/*",
+
+    # Documentation and proposals
+    "references/**/*",
+    "reference/**/*",
+    "docs/**/*",
+    "proposal_docs/**/*",
+    "ai-docs/**/*",
+    "claude.md",
+    "README.md",
+    "RELEASE_NOTES.md",
+    "BUILD_OPTIMIZATION.md",
+    "KNOWN_ISSUES.md",
+
+    # Test files
+    "test_data/**/*",
+    "tests/**/*",
+    "*.test.py",
+    "test_*.py",
+
+    # Build artifacts
+    "build/**/*",
+    "dist/**/*",
+
+    # Development scripts
+    "scripts/**/*",
+
+    # Temporary files
     ".coverage",
     "*.log",
     "*.tmp",
+    "*.zip",
+    "*.sha256",
+
+    # Project metadata (not needed in production)
+    "pyproject.toml",
+    "uv.lock",
+    ".python-version",
 ]
 
 [build-system]
