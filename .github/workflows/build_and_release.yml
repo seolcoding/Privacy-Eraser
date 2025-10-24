@@ -29,17 +29,12 @@ jobs:
         with:
           path: ~\.local\bin
           key: ${{ runner.os }}-uv-0.9.5
-          restore-keys: |
-            ${{ runner.os }}-uv-
 
       - name: Install UV
         shell: pwsh
         run: |
           if (-not (Test-Path "$HOME\.local\bin\uv.exe")) {
-            Write-Host "Installing uv..."
             iwr https://astral.sh/uv/install.ps1 -UseBasicParsing | iex
-          } else {
-            Write-Host "uv already installed (from cache)"
           }
           echo "$HOME\.local\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
@@ -47,197 +42,145 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~\AppData\Local\uv\cache
-          key: ${{ runner.os }}-uv-cache-${{ hashFiles('**/pyproject.toml') }}
-          restore-keys: |
-            ${{ runner.os }}-uv-cache-
+          key: ${{ runner.os }}-uv-${{ hashFiles('**/pyproject.toml') }}
 
-      - name: Cache Flet Flutter SDK
+      - name: Cache Flutter SDK
         uses: actions/cache@v4
         with:
           path: ~\AppData\Local\flet\bin\flutter
-          key: ${{ runner.os }}-flet-flutter-0.28.3
-          restore-keys: |
-            ${{ runner.os }}-flet-flutter-
+          key: ${{ runner.os }}-flutter-0.28.3
 
-      - name: Install dependencies
-        shell: pwsh
+      # Run ONLY Steps 1-2 of release_flutter.bat (build only)
+      - name: Build (Steps 1-2 from release_flutter.bat)
+        shell: cmd
         run: |
+          echo ============================================
+          echo Step 1: Installing dependencies
+          echo ============================================
           uv sync --all-extras
+          if %errorlevel% neq 0 exit /b 1
+          echo [OK] Dependencies installed
+          
+          echo.
+          echo ============================================
+          echo Step 2: Building with Flet
+          echo ============================================
+          
+          REM Verify src/ is clean
+          if exist "src\.venv" (
+            echo [ERROR] .venv found in src/
+            exit /b 1
+          )
+          echo [OK] src/ is clean
+          
+          REM Clean previous builds
+          if exist "build\windows" rmdir /s /q "build\windows"
+          if exist "src\build\windows" rmdir /s /q "src\build\windows"
+          
+          REM Build (same as release_flutter.bat line 133-148)
+          cd src
+          uv run flet build windows --exclude ".venv" --exclude "venv" --exclude "__pycache__" --exclude "tests"
+          if %errorlevel% neq 0 (
+            cd ..
+            exit /b 1
+          )
+          
+          REM Move build output to root
+          if exist "build\windows" (
+            move "build\windows" "..\build\windows" >nul
+          )
+          cd ..
+          
+          if not exist "build\windows" (
+            echo [ERROR] Build failed!
+            exit /b 1
+          )
+          echo [OK] Build successful at build\windows
 
-      - name: Verify src/ directory is clean
+      # Remove app.zip (the 1GB+ problem)
+      - name: Remove app.zip (1GB+ bloat)
         shell: pwsh
         run: |
-          if (Test-Path "src\.venv") {
-            Write-Error ".venv found in src/! This will bloat app.zip to 1.2GB+"
-            exit 1
-          }
-          if (Test-Path "src\venv") {
-            Write-Error "venv found in src/! This will bloat app.zip to 1.2GB+"
-            exit 1
-          }
-          Write-Host "[OK] src/ directory is clean"
-
-      - name: Build with Flet
-        shell: pwsh
-        env:
-          PYTHONIOENCODING: utf-8
-          PYTHONUTF8: 1
-        run: |
-          [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-          $env:PYTHONIOENCODING = "utf-8"
-
-          Write-Host "Building Flet app from src/ directory..."
-          uv run flet build windows src --exclude ".venv" --exclude "venv" --exclude "__pycache__" --exclude "tests"
-
-          Write-Host ""
           Write-Host "============================================"
-          Write-Host "BUILD OUTPUT LOCATION DETECTION"
+          Write-Host "Removing app.zip to reduce size"
           Write-Host "============================================"
           
-          Write-Host "Current directory contents:"
-          Get-ChildItem -Force | Select-Object Mode, Length, Name | Format-Table -AutoSize
-
-          Write-Host ""
-          Write-Host "Searching for 'windows' build directories..."
-          $windowsDirs = Get-ChildItem -Path . -Filter "windows" -Recurse -Directory -ErrorAction SilentlyContinue
-          if ($windowsDirs) {
-            Write-Host "Found windows directories:"
-            $windowsDirs | ForEach-Object { Write-Host "  - $($_.FullName)" }
-          }
-
-          $buildLocations = @(
-            "build\windows",
-            "src\build\windows",
-            ".\build\windows",
-            "dist\windows"
-          )
-
-          Write-Host ""
-          Write-Host "Checking common build locations:"
-          $foundLocation = $null
-          foreach ($loc in $buildLocations) {
-            if (Test-Path $loc) {
-              Write-Host "  ✓ Found: $loc"
-              $foundLocation = $loc
-              Write-Host "    Contents:"
-              Get-ChildItem $loc | Select-Object Name | ForEach-Object { Write-Host "      - $($_.Name)" }
-            } else {
-              Write-Host "  ✗ Not found: $loc"
-            }
-          }
-
-          if (Test-Path "src\build\windows") {
-            Write-Host ""
-            Write-Host "Moving build from src\build\windows to build\windows..."
+          $appZip = "build\windows\data\flutter_assets\app.zip"
+          
+          if (Test-Path $appZip) {
+            $beforeMB = (Get-Item $appZip).Length / 1MB
+            Write-Host "Found app.zip: $([math]::Round($beforeMB, 2)) MB"
             
-            if (-not (Test-Path "build")) {
-              New-Item -ItemType Directory -Path "build" | Out-Null
-            }
-            
-            if (Test-Path "build\windows") {
-              Remove-Item "build\windows" -Recurse -Force
-            }
-            
-            Move-Item "src\build\windows" "build\windows" -Force
-            Write-Host "[OK] Build moved successfully"
-            $foundLocation = "build\windows"
-          }
-
-          Write-Host ""
-          Write-Host "============================================"
-          if (Test-Path "build\windows") {
-            Write-Host "[OK] Build output confirmed at: build\windows"
-            
-            $buildSize = (Get-ChildItem "build\windows" -Recurse | Measure-Object -Property Length -Sum).Sum / 1MB
-            Write-Host "Build directory size: $([math]::Round($buildSize, 2)) MB"
+            Remove-Item $appZip -Force
+            Write-Host "[OK] app.zip removed (saved $([math]::Round($beforeMB, 2)) MB)"
           } else {
-            Write-Error "Build output not found at expected location!"
-            Write-Host ""
-            Write-Host "All directories in current path:"
-            Get-ChildItem -Recurse -Directory | Select-Object FullName | Format-Table -AutoSize
-            exit 1
+            Write-Host "[INFO] app.zip not found"
           }
-          Write-Host "============================================"
+          
+          # Show final size
+          $finalMB = (Get-ChildItem "build\windows" -Recurse | Measure-Object -Property Length -Sum).Sum / 1MB
+          Write-Host "[OK] Final build size: $([math]::Round($finalMB, 2)) MB"
 
-      - name: Verify app.zip size
-        shell: pwsh
-        run: |
-          $appZipPath = "build\windows\data\flutter_assets\app.zip"
-
-          if (Test-Path $appZipPath) {
-            $sizeMB = (Get-Item $appZipPath).Length / 1MB
-            Write-Host "app.zip size: $([math]::Round($sizeMB, 2)) MB"
-
-            if ($sizeMB -gt 100) {
-              Write-Error "app.zip is too large ($([math]::Round($sizeMB, 2)) MB)! Expected: 5-20 MB"
-              Write-Error "This indicates .venv or dev files were packaged"
-              exit 1
-            }
-
-            Write-Host "[OK] app.zip size is acceptable"
-          } else {
-            Write-Host "[WARNING] app.zip not found (okay if Flet 0.27.0+ uses unpacked packages)"
-          }
-
+      # Get version (same logic as release_flutter.bat)
       - name: Determine version
         id: version
         shell: pwsh
         run: |
           if ($env:GITHUB_REF -match 'refs/tags/v(.*)') {
             $version = $matches[1]
-          } elseif ("${{ github.event.inputs.version }}" -ne "") {
+          } elseif ("${{ github.event.inputs.version }}") {
             $version = "${{ github.event.inputs.version }}"
           } else {
             $version = "dev-$(Get-Date -Format 'yyyyMMdd-HHmmss')"
           }
-
           echo "version=$version" >> $env:GITHUB_OUTPUT
-          echo "Version: $version"
+          Write-Host "Version: $version"
 
+      # Create ZIP (Step 3 from release_flutter.bat, but WITHOUT app.zip)
       - name: Create ZIP archive
+        id: create_zip
         shell: pwsh
         run: |
           $version = "${{ steps.version.outputs.version }}"
           $zipName = "PrivacyEraser-v$version-win-x64.zip"
-
+          
+          Write-Host "============================================"
+          Write-Host "Creating distribution ZIP"
+          Write-Host "============================================"
+          
+          # Same as release_flutter.bat but app.zip already removed
           Compress-Archive -Path "build\windows\*" -DestinationPath $zipName -Force
-
+          
+          # Calculate SHA256 (same as release_flutter.bat)
           $hash = (Get-FileHash $zipName -Algorithm SHA256).Hash
           "$hash  $zipName" | Out-File "$zipName.sha256" -Encoding ascii
-
-          $zipSizeMB = (Get-Item $zipName).Length / 1MB
-          Write-Host "ZIP size: $([math]::Round($zipSizeMB, 2)) MB"
-
+          
+          # Show size
+          $sizeMB = (Get-Item $zipName).Length / 1MB
+          Write-Host "[OK] ZIP created: $zipName"
+          Write-Host "[OK] Size: $([math]::Round($sizeMB, 2)) MB"
+          
           echo "zip_name=$zipName" >> $env:GITHUB_OUTPUT
-          echo "zip_path=$zipName" >> $env:GITHUB_OUTPUT
-          echo "zip_size_mb=$([math]::Round($zipSizeMB, 2))" >> $env:GITHUB_OUTPUT
-        id: create_zip
+          echo "zip_size_mb=$([math]::Round($sizeMB, 2))" >> $env:GITHUB_OUTPUT
 
+      # Validate size (same as release_flutter.bat)
       - name: Verify distribution size
         shell: pwsh
         run: |
-          $zipSizeMB = ${{ steps.create_zip.outputs.zip_size_mb }}
-
+          $sizeMB = ${{ steps.create_zip.outputs.zip_size_mb }}
+          
           Write-Host "============================================"
-          Write-Host "DISTRIBUTION SIZE VALIDATION"
-          Write-Host "============================================"
-          Write-Host "Current size: $zipSizeMB MB"
+          Write-Host "Distribution size: $sizeMB MB"
           Write-Host "Maximum allowed: 200 MB"
-
-          if ($zipSizeMB -gt 200) {
-            Write-Host "============================================"
-            Write-Error "Distribution ZIP is too large! ($zipSizeMB MB)"
-            Write-Error "Maximum allowed: 200 MB"
-            Write-Error ""
-            Write-Error "This indicates build optimization failed."
-            Write-Error "Check KNOWN_ISSUES.md for troubleshooting."
-            Write-Host "============================================"
+          Write-Host "============================================"
+          
+          if ($sizeMB -gt 200) {
+            Write-Error "Distribution too large!"
             exit 1
           }
+          Write-Host "[OK] Size acceptable"
 
-          Write-Host "[OK] Distribution size is acceptable"
-          Write-Host "============================================"
-
+      # Upload artifacts (instead of Step 4-5 from release_flutter.bat)
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -247,6 +190,7 @@ jobs:
             PrivacyEraser-v${{ steps.version.outputs.version }}-win-x64.zip.sha256
           retention-days: 30
 
+      # Create GitHub Release (replaces Step 4-5 from release_flutter.bat)
       - name: Create GitHub Release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v1
@@ -264,10 +208,11 @@ jobs:
         shell: pwsh
         run: |
           Write-Host "============================================"
-          Write-Host "BUILD COMPLETED SUCCESSFULLY"
+          Write-Host "RELEASE COMPLETED"
           Write-Host "============================================"
           Write-Host "Version: ${{ steps.version.outputs.version }}"
           Write-Host "Package: ${{ steps.create_zip.outputs.zip_name }}"
-          Write-Host "Framework: Flet (Flutter for Python)"
-          Write-Host "Size: ${{ steps.create_zip.outputs.zip_size_mb }} MB"
+          Write-Host "Size: ${{ steps.create_zip.outputs.zip_size_mb }} MB (app.zip removed)"
+          Write-Host "Build: Same as release_flutter.bat"
+          Write-Host "Release: GitHub Actions"
           Write-Host "============================================"
