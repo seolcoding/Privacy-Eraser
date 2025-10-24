@@ -1,4 +1,4 @@
-name: Build and Release (Production)
+name: Build and Release
 
 on:
   workflow_dispatch:
@@ -44,7 +44,6 @@ jobs:
           path: ~\AppData\Local\flet\bin\flutter
           key: ${{ runner.os }}-flutter-0.28.3
 
-      # STEP 1: Install dependencies
       - name: Install dependencies
         shell: pwsh
         run: |
@@ -59,7 +58,6 @@ jobs:
           }
           Write-Host "[✓] Dependencies installed" -ForegroundColor Green
 
-      # STEP 2: Verify environment
       - name: Verify build environment
         shell: pwsh
         run: |
@@ -67,18 +65,15 @@ jobs:
           Write-Host "STEP 2: Verifying environment" -ForegroundColor Cyan
           Write-Host "============================================" -ForegroundColor Cyan
           
-          # Check src/ is clean
           if (Test-Path "src\.venv") {
             Write-Error ".venv found in src/ directory!"
             exit 1
           }
           Write-Host "[✓] src/ directory is clean" -ForegroundColor Green
           
-          # Show current directory structure
           Write-Host "`nCurrent directory structure:"
           Get-ChildItem -Force | Select-Object Mode, Name | Format-Table -AutoSize
           
-          # Clean old builds
           @("build\windows", "src\build\windows") | ForEach-Object {
             if (Test-Path $_) {
               Write-Host "Cleaning old build: $_"
@@ -87,8 +82,7 @@ jobs:
           }
           Write-Host "[✓] Old builds cleaned" -ForegroundColor Green
 
-      # STEP 3: Build with Flet
-      - name: Build with Flet (with monitoring)
+      - name: Build with Flet
         shell: pwsh
         env:
           PYTHONIOENCODING: utf-8
@@ -98,14 +92,12 @@ jobs:
           Write-Host "STEP 3: Building with Flet" -ForegroundColor Cyan
           Write-Host "============================================" -ForegroundColor Cyan
           
-          # Set UTF-8 encoding
           [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
           $env:PYTHONIOENCODING = "utf-8"
           
           Write-Host "Current location: $(Get-Location)"
           Write-Host "Building from src/ directory...`n"
           
-          # Change to src and build
           Set-Location src
           Write-Host "Executing: uv run flet build windows --exclude .venv --exclude venv --exclude __pycache__ --exclude tests`n"
           
@@ -121,7 +113,6 @@ jobs:
           
           Write-Host "`n[✓] Flet build command completed" -ForegroundColor Green
 
-      # STEP 4: Find and move build output (ROBUST)
       - name: Locate and prepare build output
         shell: pwsh
         run: |
@@ -129,7 +120,6 @@ jobs:
           Write-Host "STEP 4: Locating build output" -ForegroundColor Cyan
           Write-Host "============================================" -ForegroundColor Cyan
           
-          # Define all possible build locations
           $possibleLocations = @(
             "build\windows",
             "src\build\windows",
@@ -146,7 +136,6 @@ jobs:
               Write-Host "[FOUND]" -ForegroundColor Green
               $foundLocation = $loc
               
-              # Show what's inside
               $itemCount = (Get-ChildItem $loc).Count
               Write-Host "    Contents: $itemCount items"
               Get-ChildItem $loc -Name | ForEach-Object { Write-Host "      - $_" }
@@ -156,7 +145,6 @@ jobs:
             }
           }
           
-          # If not found in known locations, search entire tree
           if (-not $foundLocation) {
             Write-Host "`n[!] Not found in known locations. Searching entire directory tree..." -ForegroundColor Yellow
             
@@ -169,9 +157,10 @@ jobs:
                 $relPath = $dir.FullName.Replace((Get-Location).Path + "\", "")
                 Write-Host "  - $relPath"
                 
-                # Check if it looks like a Flet build output
-                if (Test-Path (Join-Path $dir.FullName "privacy_eraser.exe") -or
-                    Test-Path (Join-Path $dir.FullName "data")) {
+                $exePath = Join-Path $dir.FullName "privacy_eraser.exe"
+                $dataPath = Join-Path $dir.FullName "data"
+                
+                if ((Test-Path $exePath) -or (Test-Path $dataPath)) {
                   Write-Host "    [!] This looks like a build output!" -ForegroundColor Yellow
                   $foundLocation = $relPath
                   break
@@ -180,7 +169,6 @@ jobs:
             }
           }
           
-          # Move/copy to standard location
           if ($foundLocation) {
             Write-Host "`n============================================" -ForegroundColor Cyan
             Write-Host "BUILD OUTPUT FOUND: $foundLocation" -ForegroundColor Green
@@ -191,18 +179,15 @@ jobs:
             if ($foundLocation -ne $targetLocation) {
               Write-Host "`nMoving to standard location: $targetLocation"
               
-              # Ensure target directory exists
               $targetParent = Split-Path $targetLocation -Parent
               if ($targetParent -and -not (Test-Path $targetParent)) {
                 New-Item -ItemType Directory -Path $targetParent -Force | Out-Null
               }
               
-              # Remove target if exists
               if (Test-Path $targetLocation) {
                 Remove-Item $targetLocation -Recurse -Force
               }
               
-              # Move the build
               Move-Item $foundLocation $targetLocation -Force
               
               if (Test-Path $targetLocation) {
@@ -215,7 +200,6 @@ jobs:
               Write-Host "[✓] Build already at correct location" -ForegroundColor Green
             }
             
-            # Verify and show stats
             if (Test-Path $targetLocation) {
               $buildSize = (Get-ChildItem $targetLocation -Recurse | Measure-Object -Property Length -Sum).Sum / 1MB
               $fileCount = (Get-ChildItem $targetLocation -Recurse -File).Count
@@ -225,9 +209,9 @@ jobs:
               Write-Host "  Size: $([math]::Round($buildSize, 2)) MB"
               Write-Host "  Files: $fileCount"
               
-              # Check for main executable
-              if (Test-Path "$targetLocation\privacy_eraser.exe") {
-                $exeSize = (Get-Item "$targetLocation\privacy_eraser.exe").Length / 1MB
+              $mainExe = Join-Path $targetLocation "privacy_eraser.exe"
+              if (Test-Path $mainExe) {
+                $exeSize = (Get-Item $mainExe).Length / 1MB
                 Write-Host "  Main EXE: $([math]::Round($exeSize, 2)) MB"
                 Write-Host "[✓] Build verification passed" -ForegroundColor Green
               } else {
@@ -247,8 +231,7 @@ jobs:
             exit 1
           }
 
-      # STEP 5: Remove app.zip
-      - name: Remove app.zip (1GB+ bloat)
+      - name: Remove app.zip
         shell: pwsh
         run: |
           Write-Host "============================================" -ForegroundColor Cyan
@@ -266,7 +249,6 @@ jobs:
           } else {
             Write-Host "[i] app.zip not found (Flet 0.28+ may use unpacked packages)" -ForegroundColor Yellow
             
-            # Check for unpacked packages
             $packagesPath = "build\windows\data\flutter_assets\packages"
             if (Test-Path $packagesPath) {
               $packagesMB = (Get-ChildItem $packagesPath -Recurse | Measure-Object -Property Length -Sum).Sum / 1MB
@@ -274,11 +256,9 @@ jobs:
             }
           }
           
-          # Show final build size
           $finalMB = (Get-ChildItem "build\windows" -Recurse | Measure-Object -Property Length -Sum).Sum / 1MB
           Write-Host "`n[✓] Final build size: $([math]::Round($finalMB, 2)) MB" -ForegroundColor Green
 
-      # STEP 6: Get version
       - name: Determine version
         id: version
         shell: pwsh
@@ -294,7 +274,6 @@ jobs:
           echo "version=$version" >> $env:GITHUB_OUTPUT
           Write-Host "Version: $version" -ForegroundColor Cyan
 
-      # STEP 7: Create ZIP
       - name: Create distribution ZIP
         id: create_zip
         shell: pwsh
@@ -309,11 +288,9 @@ jobs:
           Write-Host "Creating: $zipName"
           Compress-Archive -Path "build\windows\*" -DestinationPath $zipName -Force
           
-          # Calculate hash
           $hash = (Get-FileHash $zipName -Algorithm SHA256).Hash
           "$hash  $zipName" | Out-File "$zipName.sha256" -Encoding ascii
           
-          # Show results
           $sizeMB = (Get-Item $zipName).Length / 1MB
           Write-Host "[✓] ZIP created: $([math]::Round($sizeMB, 2)) MB" -ForegroundColor Green
           Write-Host "    SHA256: $hash"
@@ -321,7 +298,6 @@ jobs:
           echo "zip_name=$zipName" >> $env:GITHUB_OUTPUT
           echo "zip_size_mb=$([math]::Round($sizeMB, 2))" >> $env:GITHUB_OUTPUT
 
-      # STEP 8: Verify size
       - name: Verify distribution size
         shell: pwsh
         run: |
@@ -338,7 +314,6 @@ jobs:
           
           Write-Host "[✓] Size acceptable" -ForegroundColor Green
 
-      # Upload artifacts
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -348,7 +323,6 @@ jobs:
             PrivacyEraser-v${{ steps.version.outputs.version }}-win-x64.zip.sha256
           retention-days: 30
 
-      # Create GitHub Release
       - name: Create GitHub Release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v1
@@ -362,7 +336,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # Final summary
       - name: Build summary
         shell: pwsh
         run: |
