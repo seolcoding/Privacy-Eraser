@@ -93,16 +93,20 @@ jobs:
           # Set console to UTF-8 for Rich library compatibility
           [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
           $env:PYTHONIOENCODING = "utf-8"
-          
-          cd src
-          uv run flet build windows --exclude ".venv" --exclude "venv" --exclude "__pycache__" --exclude "tests"
-          cd ..
 
-      - name: Move build output to root
-        shell: pwsh
-        run: |
-          if (Test-Path "src\build\windows") {
-            Move-Item "src\build\windows" "build\windows" -Force
+          # Build from root directory with src as target
+          Write-Host "Building Flet app from src/ directory..."
+          uv run flet build windows src --exclude ".venv" --exclude "venv" --exclude "__pycache__" --exclude "tests"
+
+          # Verify build output
+          Write-Host "Verifying build output location..."
+          if (Test-Path "build\windows") {
+            Write-Host "[OK] Build output found at: build\windows"
+          } else {
+            Write-Error "Build output not found at expected location!"
+            Write-Host "Searching for build directories..."
+            Get-ChildItem -Path . -Filter "*windows*" -Recurse -Directory | Select-Object FullName
+            exit 1
           }
 
       # CRITICAL: Verify app.zip size
@@ -181,7 +185,7 @@ jobs:
             Write-Error ""
             Write-Error "This indicates build optimization failed."
             Write-Error "Check KNOWN_ISSUES.md for troubleshooting."
-            Write-Error "============================================"
+            Write-Host "============================================"
             exit 1
           }
 
@@ -220,4 +224,5 @@ jobs:
           Write-Host "Version: ${{ steps.version.outputs.version }}"
           Write-Host "Package: ${{ steps.create_zip.outputs.zip_name }}"
           Write-Host "Framework: Flet (Flutter for Python)"
+          Write-Host "Size: ${{ steps.create_zip.outputs.zip_size_mb }} MB"
           Write-Host "============================================"
