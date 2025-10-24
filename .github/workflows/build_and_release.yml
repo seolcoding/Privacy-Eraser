@@ -1,4 +1,3 @@
-📄 .github/workflows/build-and-release.yml
 name: Build and Release
 
 on:
