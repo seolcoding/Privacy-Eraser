@@ -98,8 +98,11 @@ if exist "src\build\windows" rmdir /s /q "src\build\windows"
 
 REM Build with Flet Build (Flutter-based, uses pyproject.toml settings)
 REM Build from src/ directory to minimize package size (only includes src/)
+REM Added size optimization flags:
+REM   --exclude: Exclude .venv, __pycache__, tests (redundant with pyproject.toml but explicit)
+REM   Note: pyproject.toml [tool.flet] exclude is the primary configuration
 cd src
-uv run flet build windows
+uv run flet build windows --exclude ".venv" --exclude "venv" --exclude "__pycache__" --exclude "tests"
 
 if %errorlevel% neq 0 (
     echo [ERROR] Build failed!

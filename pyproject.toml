@@ -31,23 +31,58 @@ build_number = 1
 icon = "static/icons/app_icon.ico"
 
 # Exclude unnecessary files from build to reduce size
+# CRITICAL: Prevents .venv and development files from being packaged
 exclude = [
-    "test_data",
-    ".git",
+    # Virtual environments (MUST exclude to reduce size)
+    ".venv/**/*",
+    "venv/**/*",
     ".venv",
     "venv",
-    ".claude",
-    ".vscode",
-    ".idea",
-    ".cursor",
-    "references",
-    "reference",
-    "docs",
-    "scripts/generate_test_data.py",
-    "scripts/generate_icon.py",
+    "__pycache__/**/*",
+    "*.pyc",
+    "*.pyo",
+    "*.pyd",
+
+    # Version control and configs
+    ".git/**/*",
+    ".gitignore",
+    ".gitattributes",
+
+    # Editor/IDE files
+    ".claude/**/*",
+    ".vscode/**/*",
+    ".idea/**/*",
+    ".cursor/**/*",
+
+    # Documentation and proposals
+    "references/**/*",
+    "reference/**/*",
+    "docs/**/*",
+    "proposal_docs/**/*",
+    "ai-docs/**/*",
+    "claude.md",
+    "README.md",
+    "RELEASE_NOTES.md",
+
+    # Test files
+    "test_data/**/*",
+    "tests/**/*",
+    "*.test.py",
+    "test_*.py",
+
+    # Build artifacts
+    "build/**/*",
+    "dist/**/*",
+
+    # Development scripts
+    "scripts/**/*",
+
+    # Temporary files
     ".coverage",
     "*.log",
     "*.tmp",
+    "*.zip",
+    "*.sha256",
 ]
 
 [build-system]
