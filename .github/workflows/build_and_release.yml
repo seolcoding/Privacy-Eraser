@@ -1,15 +1,12 @@
 name: Build and Release
 
 on:
-  # Manual trigger
   workflow_dispatch:
     inputs:
       version:
         description: 'Version number (e.g., 2.1.0)'
         required: true
         type: string
-
-  # Automatic trigger on tag push
   push:
     tags:
       - 'v*.*.*'
@@ -27,7 +24,6 @@ jobs:
         with:
           python-version: '3.12'
 
-      # Cache uv installation
       - name: Cache uv
         uses: actions/cache@v4
         with:
@@ -47,7 +43,6 @@ jobs:
           }
           echo "$HOME\.local\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
-      # Cache uv package cache
       - name: Cache uv packages
         uses: actions/cache@v4
         with:
@@ -56,7 +51,6 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-uv-cache-
 
-      # Cache Flet Flutter SDK
       - name: Cache Flet Flutter SDK
         uses: actions/cache@v4
         with:
@@ -70,7 +64,6 @@ jobs:
         run: |
           uv sync --all-extras
 
-      # CRITICAL: Verify src/ is clean (no .venv)
       - name: Verify src/ directory is clean
         shell: pwsh
         run: |
@@ -90,26 +83,82 @@ jobs:
           PYTHONIOENCODING: utf-8
           PYTHONUTF8: 1
         run: |
-          # Set console to UTF-8 for Rich library compatibility
           [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
           $env:PYTHONIOENCODING = "utf-8"
 
-          # Build from root directory with src as target
           Write-Host "Building Flet app from src/ directory..."
           uv run flet build windows src --exclude ".venv" --exclude "venv" --exclude "__pycache__" --exclude "tests"
 
-          # Verify build output
-          Write-Host "Verifying build output location..."
-          if (Test-Path "build\windows") {
-            Write-Host "[OK] Build output found at: build\windows"
-          } else {
-            Write-Error "Build output not found at expected location!"
-            Write-Host "Searching for build directories..."
-            Get-ChildItem -Path . -Filter "*windows*" -Recurse -Directory | Select-Object FullName
-            exit 1
+          Write-Host ""
+          Write-Host "============================================"
+          Write-Host "BUILD OUTPUT LOCATION DETECTION"
+          Write-Host "============================================"
+          
+          Write-Host "Current directory contents:"
+          Get-ChildItem -Force | Select-Object Mode, Length, Name | Format-Table -AutoSize
+
+          Write-Host ""
+          Write-Host "Searching for 'windows' build directories..."
+          $windowsDirs = Get-ChildItem -Path . -Filter "windows" -Recurse -Directory -ErrorAction SilentlyContinue
+          if ($windowsDirs) {
+            Write-Host "Found windows directories:"
+            $windowsDirs | ForEach-Object { Write-Host "  - $($_.FullName)" }
           }
 
-      # CRITICAL: Verify app.zip size
+          $buildLocations = @(
+            "build\windows",
+            "src\build\windows",
+            ".\build\windows",
+            "dist\windows"
+          )
+
+          Write-Host ""
+          Write-Host "Checking common build locations:"
+          $foundLocation = $null
+          foreach ($loc in $buildLocations) {
+            if (Test-Path $loc) {
+              Write-Host "  ✓ Found: $loc"
+              $foundLocation = $loc
+              Write-Host "    Contents:"
+              Get-ChildItem $loc | Select-Object Name | ForEach-Object { Write-Host "      - $($_.Name)" }
+            } else {
+              Write-Host "  ✗ Not found: $loc"
+            }
+          }
+
+          if (Test-Path "src\build\windows") {
+            Write-Host ""
+            Write-Host "Moving build from src\build\windows to build\windows..."
+            
+            if (-not (Test-Path "build")) {
+              New-Item -ItemType Directory -Path "build" | Out-Null
+            }
+            
+            if (Test-Path "build\windows") {
+              Remove-Item "build\windows" -Recurse -Force
+            }
+            
+            Move-Item "src\build\windows" "build\windows" -Force
+            Write-Host "[OK] Build moved successfully"
+            $foundLocation = "build\windows"
+          }
+
+          Write-Host ""
+          Write-Host "============================================"
+          if (Test-Path "build\windows") {
+            Write-Host "[OK] Build output confirmed at: build\windows"
+            
+            $buildSize = (Get-ChildItem "build\windows" -Recurse | Measure-Object -Property Length -Sum).Sum / 1MB
+            Write-Host "Build directory size: $([math]::Round($buildSize, 2)) MB"
+          } else {
+            Write-Error "Build output not found at expected location!"
+            Write-Host ""
+            Write-Host "All directories in current path:"
+            Get-ChildItem -Recurse -Directory | Select-Object FullName | Format-Table -AutoSize
+            exit 1
+          }
+          Write-Host "============================================"
+
       - name: Verify app.zip size
         shell: pwsh
         run: |
@@ -153,11 +202,9 @@ jobs:
 
           Compress-Archive -Path "build\windows\*" -DestinationPath $zipName -Force
 
-          # Calculate SHA256 hash
           $hash = (Get-FileHash $zipName -Algorithm SHA256).Hash
           "$hash  $zipName" | Out-File "$zipName.sha256" -Encoding ascii
 
-          # Show file sizes
           $zipSizeMB = (Get-Item $zipName).Length / 1MB
           Write-Host "ZIP size: $([math]::Round($zipSizeMB, 2)) MB"
 
@@ -166,7 +213,6 @@ jobs:
           echo "zip_size_mb=$([math]::Round($zipSizeMB, 2))" >> $env:GITHUB_OUTPUT
         id: create_zip
 
-      # CRITICAL: Verify final ZIP size is under 200MB
       - name: Verify distribution size
         shell: pwsh
         run: |
@@ -201,7 +247,6 @@ jobs:
             PrivacyEraser-v${{ steps.version.outputs.version }}-win-x64.zip.sha256
           retention-days: 30
 
-      # Create GitHub Release (only on tag push)
       - name: Create GitHub Release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v1
