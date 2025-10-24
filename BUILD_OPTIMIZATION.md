@@ -105,6 +105,47 @@ uv run flet build windows --exclude ".venv" --exclude "venv" --exclude "__pycach
 scripts\release_flutter.bat 2.0.0
 ```
 
+## FAQ: Common Concerns
+
+### Q: ".venv 제외하면 라이브러리가 포함되지 않나요?"
+
+**A: 아닙니다! Flet 빌드는 `.venv`를 사용하지 않습니다.**
+
+**작동 원리:**
+1. `flet build` 명령어는 `pyproject.toml`의 `[project.dependencies]`를 **직접 읽습니다**
+2. 필요한 패키지들을 **독립적으로 수집**하여 번들에 포함합니다
+3. `.venv`는 개발 환경일 뿐, 빌드 시에는 참조되지 않습니다
+
+**증거 (Flet 공식 문서):**
+> "The packaging installs all dependencies 'as is' from requirements.txt or pyproject.toml"
+>
+> "Site packages are now copied in an unpacked state directly into the application bundle" (Flet 0.27.0+)
+
+**빌드 흐름:**
+```
+uv sync (개발 환경에 의존성 설치)
+    ↓
+flet build windows (pyproject.toml 읽기)
+    ↓
+의존성을 독립적으로 수집 (NOT from .venv)
+    ↓
+앱 번들에 포함
+```
+
+**`--exclude ".venv"`의 의미:**
+- **소스 코드** 패키징 시 `.venv` 폴더를 제외
+- 의존성 번들링과는 무관
+- 크기만 줄이고 기능은 동일
+
+### Q: "그럼 .venv가 없어도 빌드가 가능한가요?"
+
+**A: 이론적으로는 가능하지만, 실제로는:**
+- `uv sync`로 개발 환경을 먼저 준비합니다 (line 87)
+- `flet build`가 pyproject.toml을 읽을 때 올바른 환경이 필요합니다
+- `.venv`는 빌드 **도구** 실행을 위해 필요하지만, **결과물**에는 포함되지 않습니다
+
+**결론:** `.venv`를 exclude해도 앱은 정상 작동합니다!
+
 ## Troubleshooting
 
 ### Issue: `.venv` still included
