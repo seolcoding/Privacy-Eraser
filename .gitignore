@@ -44,12 +44,9 @@ screenshots/
 # Backups
 backups/
 
-# Reference/Docs (archived)
+# Reference (BleachBit source - not committed)
 reference/
 references/
-docs/
-proposal_docs/
-claudedocs/
 
 # Temporary test files
 test_*.py
