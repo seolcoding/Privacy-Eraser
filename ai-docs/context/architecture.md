@@ -1,199 +1,466 @@
-# PrivacyEraser Architecture (Flet POC)
+# Privacy Eraser Architecture
 
-**Last Updated:** 2025-10-21
-**Status:** Flet UI POC - v2.0.0
+**Last Updated:** 2025-10-27
+**Status:** Production - v2.0.x (Flet UI)
 
 ## Overview
-PrivacyEraser is a Windows-focused privacy cleaning tool built with Python 3.12+, Flet UI (Flutter for Python), and a modular cleaning engine. The project combines a Material Design 3 Flet interface with a powerful core engine for browser data deletion.
+
+Privacy Eraser is a Windows desktop application for automated browser privacy cleaning. Built with Python 3.12+, Flet UI (Flutter for Python), and BleachBit's cleaning engine, it provides a Material Design 3 interface with powerful scheduled deletion capabilities.
 
 ## Technology Stack
 
-### Core
+### Core Technologies
 - **Language:** Python 3.12+
 - **Package Manager:** uv
-- **UI Framework:** Flet >= 0.28.0 (Flutter for Python, cross-platform)
+- **UI Framework:** Flet >= 0.28.0 (Flutter for Python)
+- **Design System:** Material Design 3
+- **Scheduler:** APScheduler 3.10+
 - **Logging:** loguru (structured logging)
 - **Process Management:** psutil 5.9.8
-- **Image Processing:** Pillow >= 10.0.0
+- **Notifications:** winotify (Windows Toast notifications)
 
-### Current Dependencies
+### Dependencies
+
 ```toml
-flet>=0.28.0
-pillow>=10.0.0
-loguru>=0.7.2
-psutil>=5.9.8
-pyinstaller>=6.16.0
+[project.dependencies]
+flet = ">=0.28.0"
+pillow = ">=10.0.0"
+loguru = ">=0.7.2"
+psutil = ">=5.9.8"
+apscheduler = ">=3.10.0"
+winotify = ">=1.1.0"
 ```
 
-### Test Dependencies
-```toml
-pytest>=8.3.0
-pytest-cov>=5.0.0
-pytest-mock>=3.14.0
+### Build & Distribution
+- **Build Tool:** Flet Build (Flutter SDK)
+- **Package Format:** ZIP archive (onedir structure)
+- **Target Platform:** Windows 10/11 (64-bit)
+
+## Architecture Diagram
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                         User Interface                          │
+│                    (Flet Material Design 3)                     │
+│                   src/privacy_eraser/ui/main.py                 │
+└───────────────────────────┬─────────────────────────────────────┘
+                            │
+                ┌───────────┼───────────┐
+                │           │           │
+                ▼           ▼           ▼
+    ┌──────────────┐ ┌────────────┐ ┌─────────────┐
+    │   Browser    │ │  Schedule  │ │   Backup    │
+    │  Detection   │ │  Manager   │ │  Manager    │
+    │              │ │            │ │             │
+    │ data_config  │ │ schedule_  │ │ backup_     │
+    │   .py        │ │ manager.py │ │ manager.py  │
+    └──────┬───────┘ └─────┬──────┘ └──────┬──────┘
+           │               │                │
+           │               ▼                │
+           │    ┌──────────────────┐        │
+           │    │   Scheduler      │        │
+           │    │  (APScheduler)   │        │
+           │    │                  │        │
+           │    │ schedule_        │        │
+           │    │ executor.py      │        │
+           │    │ scheduler.py     │        │
+           │    └────────┬─────────┘        │
+           │             │                  │
+           └─────────────┼──────────────────┘
+                         │
+                         ▼
+              ┌──────────────────┐
+              │  Cleaning Engine │
+              │   (BleachBit)    │
+              │                  │
+              │ cleanerml_loader │
+              │ cleaning.py      │
+              └──────────────────┘
+                         │
+                         ▼
+              ┌──────────────────┐
+              │  File System     │
+              │  Operations      │
+              └──────────────────┘
 ```
 
 ## Module Architecture
 
 ### Entry Point
-- `src/privacy_eraser/ui/main.py`
-  - Main entry point: `main()` → launches Flet UI
-  - Installed as scripts: `privacy_eraser`, `privacy_eraser_poc`
-- `main.py` (project root) - Build wrapper for Flet Pack
+- **`src/privacy_eraser/ui/main.py`**
+  - Main entry point: `main()` → launches Flet application
+  - Installed as console script: `privacy_eraser`
+  - Flet target: `flet` function
 
 ### UI Layer (`ui/main.py`)
+
 **Responsibilities:**
 - Material Design 3 interface using Flet
-- Browser detection and display (grid layout with logo images)
-- Cleaner options panel with checkboxes
-- Progress display during cleaning operations
-- Real-time log display
-- Backup/restore functionality UI
+- Browser detection and display (2x4 grid layout with logos)
+- Delete options panel (checkboxes for cache, cookies, history, etc.)
+- Backup/restore functionality
+- Schedule management UI
+- Real-time progress display
+- Windows notifications
 
-**Key Components:**
-- Program scan: uses `detect_windows.collect_programs()`
-- Cleaner loading: tries CleanerML first, falls back to `chromium_cleaner_options()`
-- Select/Clear All, Preview, Execute Clean workflows
-- Real-time log display with rich formatting
+**Key Features:**
+- Responsive grid layout (browsers arranged in 2x4 grid)
+- Real browser logo images (`static/images/`)
+- Delete options: Cache, Cookies, History, Session, Passwords
+- Additional options: Bookmarks, Downloads, Download Files
+- Backup creation before deletion
+- Restore from backup functionality
+- Schedule creation and management
+- Progress indicators during operations
+- Windows toast notifications
 
-### Detection Layer (`detect_windows.py`)
-**Windows-Only Module**
+**UI Components:**
+- `ft.Container` - Layout containers
+- `ft.GridView` - Browser grid display
+- `ft.Checkbox` - Delete options
+- `ft.ElevatedButton` - Primary actions
+- `ft.AlertDialog` - Confirmations and schedules
+- `ft.SnackBar` - Quick notifications
+
+### Core Modules
+
+#### 1. Browser Detection (`ui/core/data_config.py`)
 
 **Responsibilities:**
-- Browser/application detection via registry, files, processes
-- `ProgramProbe` dataclass: defines detection criteria
-- `registry_key_exists()` - query Windows registry
-- `detect_file_glob()` - expand env vars and check file existence
-- `is_process_running_windows()` - psutil-based process detection
-- `collect_programs()` - aggregate detection results into table rows
+- Browser information database
+- Browser installation detection (via registry and file paths)
+- CleanerML file mapping
 
-**Supported Detection:**
-- Registry keys (HKCU, HKLM, etc.)
-- File patterns with %ENVVAR% expansion
-- Running processes (by executable name)
+**Browser Support:**
+- Chrome
+- Edge
+- Firefox
+- Brave
+- Opera
+- Whale (Naver)
+- Safari
 
-### Cleaning Engine (`cleaning.py`)
-**Cross-Platform Core**
+**Data Structures:**
+```python
+@dataclass
+class BrowserInfo:
+    id: str
+    name: str
+    logo_path: str
+    color: str
+    is_installed: bool
+    cleanerml_path: Optional[str]
+```
+
+#### 2. Schedule Manager (`ui/core/schedule_manager.py`)
 
 **Responsibilities:**
-- `DeleteAction`: single deletion operation (file, glob, walk modes)
-- `CleanerOption`: collection of actions with metadata
-- `chromium_cleaner_options()`: built-in Chromium browser presets
+- Schedule CRUD operations
+- JSON file persistence
+- Schedule validation
 
-**Search Modes:**
-- `file` - single file
-- `glob` - glob pattern
-- `walk.files` - recursive files only
-- `walk.all` - files + directories
-- `walk.top` - walk + include top directory
+**Schedule Types:**
+- `once` - One-time execution
+- `daily` - Daily at specific time
+- `weekly` - Weekly on specific day
+- `monthly` - Monthly on specific date
 
-**Built-in Chromium Options:**
-- Cache (Browser Cache, Code Cache, GPU Cache, Shader Cache, Service Worker, File System)
-- Cookies (Cookies databases in Default and Network directories)
-- History (History, Favicons, Top Sites, Session Storage)
-- Session (Current/Last Session/Tabs, Extension State)
-- Passwords (Login Data) - marked with warning
+**Data Structures:**
+```python
+@dataclass
+class ScheduleScenario:
+    id: str
+    name: str
+    enabled: bool
+    schedule_type: str  # once, daily, weekly, monthly
+    time: str  # HH:MM
+    browsers: List[str]
+    delete_bookmarks: bool
+    delete_downloads: bool
+    created_at: str
+    description: Optional[str]
+```
 
-### CleanerML Loader (`cleanerml_loader.py`)
+#### 3. Backup Manager (`ui/core/backup_manager.py`)
+
 **Responsibilities:**
-- Parse BleachBit-compatible XML cleaner definitions
-- OS filtering (`os="windows"` attribute)
-- Variable expansion (`$$VAR$$` tokens)
-- Multi-value variable expansion (e.g., ProgramFiles variants)
-- Convert XML actions to `DeleteAction` objects
+- Backup creation before deletion
+- Backup restoration
+- Backup list management
+- 30-day retention policy
+
+**Backup Structure:**
+```
+backups/
+├── 2025-10-27_14-30-15/
+│   ├── chrome/
+│   │   ├── Cookies
+│   │   ├── History
+│   │   └── ...
+│   ├── edge/
+│   └── metadata.json
+```
+
+#### 4. Scheduler (`scheduler.py`)
+
+**Responsibilities:**
+- APScheduler integration
+- Background scheduler management
+- Job registration and removal
+
+**Features:**
+- Background job execution
+- Cron-based scheduling
+- Job persistence (optional)
+
+#### 5. Schedule Executor (`schedule_executor.py`)
+
+**Responsibilities:**
+- Execute scheduled cleaning tasks
+- Browser process termination
+- Windows notifications
+- Error handling
+
+**Execution Flow:**
+1. Load schedule scenario
+2. Check browser processes
+3. Terminate if running
+4. Execute cleaning operations
+5. Send notification
+6. Log results
+
+#### 6. Notification Manager (`notification_manager.py`)
+
+**Responsibilities:**
+- Windows toast notifications
+- Notification history
+- User feedback
+
+**Notification Types:**
+- Cleaning started
+- Cleaning completed
+- Backup created
+- Restore completed
+- Schedule executed
+- Errors
+
+### Cleaning Engine
+
+#### CleanerML Loader (`cleanerml_loader.py`)
+
+**Responsibilities:**
+- Parse BleachBit XML cleaner definitions
+- OS filtering (`os="windows"`)
+- Variable expansion
+- Action conversion
 
 **Supported CleanerML Features:**
-- `<cleaner os="...">` - OS filtering
-- `<var name="...">` with multiple `<value os="...">` children
-- `<option id="...">` with label, description, warning
-- `<action command="delete" search="..." path="...">` - only `delete` command
-- `$$VAR$$` token replacement in paths
+- `<cleaner>` with OS filtering
+- `<option>` with label, description, warning
+- `<action command="delete">` with search patterns
+- Variable substitution (`$$VAR$$`)
 
-**Currently Used:**
-- Loads cleaners from `bleachbit/cleaners/` directory
-- Maps well-known browsers (Chrome, Edge, Brave, Opera, Vivaldi) to XML files
-- Falls back to built-in Chromium options for unmapped browsers
+**CleanerML Files:**
+```
+src/privacy_eraser/cleaners/
+├── google_chrome.xml
+├── microsoft_edge.xml
+├── firefox.xml
+├── brave.xml
+├── opera.xml
+├── whale.xml
+└── safari.xml
+```
 
-### Diagnostics (`diagnostics.py`)
+#### Cleaning Engine (`cleaning.py`)
+
 **Responsibilities:**
-- Startup diagnostic logging
-- Check for common browser executables via `shutil.which()`
-- Verify existence of common browser data directories
-- Log placeholder task categories
+- File/directory deletion
+- Search pattern execution
+- Safe deletion with validation
 
-**Current Status:** Placeholder implementation for smoke testing
+**Search Modes:**
+- `file` - Single file
+- `glob` - Glob pattern
+- `walk.files` - Recursive files only
+- `walk.all` - Files and directories
+- `walk.top` - Include top directory
 
 ## Data Flow
 
-### Program Detection Flow
-1. User clicks "Scan Programs"
-2. GUI calls `collect_programs()` with `ProgramProbe` list
-3. For each probe:
-   - Check registry keys → any match = "present"
-   - Check file patterns → any match = "present"
-   - Check running processes → any match = "running"
-4. Return table rows with detection results
-5. GUI populates Treeview widget
+### Main Cleaning Flow
 
-### Cleaning Flow
-1. User selects detected program from table
-2. GUI loads cleaner options:
-   - Try CleanerML file (e.g., `bleachbit/cleaners/google_chrome.xml`)
-   - Fallback to `chromium_cleaner_options()` for Chromium-like browsers
-3. Display checkboxes for each `CleanerOption`
-4. User selects options, clicks Preview or Clean
-5. Preview: aggregate all `DeleteAction.preview()` results → log items
-6. Clean: aggregate all `DeleteAction.execute()` results → log counts and bytes
+```
+User selects browsers
+       ↓
+User selects delete options
+       ↓
+Click "삭제하기" button
+       ↓
+Create backup
+       ↓
+Load CleanerML for each browser
+       ↓
+Filter options by user selection
+       ↓
+Execute DeleteAction for each option
+       ↓
+Show progress
+       ↓
+Send notification
+       ↓
+Display result
+```
 
-### Logging Flow
-1. App startup: configure loguru with two sinks
-   - Sink 1: rich console (colored stdout)
-   - Sink 2: GUI textbox (append_console callback)
-2. All modules use `logger.info()`, `logger.warning()`, `logger.error()`
-3. Stdlib logging is intercepted into loguru via `InterceptHandler`
-4. GUI Debug panel displays live log stream
+### Schedule Execution Flow
+
+```
+APScheduler triggers job
+       ↓
+Schedule Executor loads scenario
+       ↓
+Check if browsers are running
+       ↓
+Terminate browsers if needed
+       ↓
+Execute cleaning (same as manual)
+       ↓
+Send notification
+       ↓
+Log results
+```
+
+### Backup/Restore Flow
+
+```
+Backup:
+Create timestamped directory
+       ↓
+Copy browser data files
+       ↓
+Save metadata.json
+       ↓
+Enforce 30-day retention
+
+Restore:
+User selects backup
+       ↓
+Load metadata
+       ↓
+Restore files to original locations
+       ↓
+Send notification
+```
 
 ## File System Layout
+
 ```
-privacy_eraser/
-├─ src/privacy_eraser/
-│  ├─ __init__.py (version)
-│  ├─ __main__.py (entry point)
-│  ├─ gui.py (UI)
-│  ├─ cleaning.py (engine)
-│  ├─ cleanerml_loader.py (XML parser)
-│  ├─ detect_windows.py (detection)
-│  └─ diagnostics.py (startup checks)
-├─ tests/
-│  ├─ conftest.py (fixtures)
-│  ├─ test_cleaning_actions.py
-│  ├─ test_cleaning_chromium.py
-│  ├─ test_cleanerml_loader.py
-│  └─ test_detect_windows.py
-├─ bleachbit/cleaners/ (upstream CleanerML definitions)
-├─ docs/ (detailed documentation)
-├─ pyproject.toml (uv project config)
-├─ uv.lock
-└─ readme.md
+Privacy-Eraser/
+├── src/privacy_eraser/
+│   ├── __init__.py
+│   ├── ui/
+│   │   ├── main.py              # Flet UI entry point
+│   │   └── core/
+│   │       ├── data_config.py   # Browser detection
+│   │       ├── schedule_manager.py
+│   │       └── backup_manager.py
+│   ├── scheduler.py             # APScheduler integration
+│   ├── schedule_executor.py     # Execute scheduled tasks
+│   ├── notification_manager.py  # Windows notifications
+│   ├── cleaning.py              # Cleaning engine
+│   ├── cleanerml_loader.py      # XML parser
+│   └── cleaners/                # CleanerML files
+│       ├── google_chrome.xml
+│       ├── microsoft_edge.xml
+│       └── ...
+├── static/
+│   └── images/                  # Browser logos
+│       ├── chrome.png
+│       ├── edge.png
+│       └── ...
+├── tests/                       # Unit tests
+├── pyproject.toml               # uv project config
+└── README.md
 ```
+
+## Configuration
+
+### Development Mode
+
+Controlled by `AppConfig.is_dev_mode()`:
+- Uses test data directory
+- Skips actual file deletion
+- Shows DEV mode warning in UI
+
+### Storage Locations
+
+**User Data:**
+- Schedules: `%APPDATA%/PrivacyEraser/schedules.json`
+- Backups: `%APPDATA%/PrivacyEraser/backups/`
+- Logs: `%APPDATA%/PrivacyEraser/logs/`
+
+**Dev Data:**
+- Test data: `test_data/` (excluded from builds)
 
 ## Platform-Specific Code
-- **Windows-only:** `detect_windows.py` (guarded imports: `winreg`)
-- **Cross-platform:** `cleaning.py`, `cleanerml_loader.py`
-- **Tests:** Windows-only tests skip on non-Windows via pytest marker
 
-## Planned Components (Not Yet Implemented)
-- **Scheduler:** APScheduler for background tasks; Windows Task Scheduler integration
-- **Settings Persistence:** SQLite database for user preferences, schedules, logs
-- **Auto-Update:** GitHub Releases API integration with SHA256 verification
-- **License System:** Key validation for commercial/enterprise tiers
-- **Presets:** Quick Clean, Security Clean, Full Clean profiles
-- **Advanced CleanerML:** Support for `command="winreg.delete"`, `command="json"`, etc.
-- **macOS/Linux Detection:** Cross-platform browser detection modules
+- **Windows-only:**
+  - Registry detection
+  - Windows notifications (winotify)
+  - Process termination (psutil)
+  - File path expansion (`%LOCALAPPDATA%`, etc.)
+
+- **Cross-platform:**
+  - Cleaning engine (CleanerML loader, file operations)
+  - Schedule management
+  - Backup/restore
+
+## Security Considerations
+
+1. **File Validation:**
+   - Only delete within user profile directories
+   - Validate paths before deletion
+   - No system file access
+
+2. **Browser Safety:**
+   - Terminate browser before cleaning
+   - Skip files in use
+   - Backup before deletion
+
+3. **User Data Protection:**
+   - 30-day backup retention
+   - Metadata tracking
+   - Restore capability
+
+## Performance Characteristics
+
+- **Startup Time:** < 2 seconds
+- **Browser Detection:** < 500ms
+- **Cleaning Operation:** Varies by data size (typically 1-10 seconds)
+- **Memory Usage:** ~50-100MB
+- **Disk Space:** ~70-100MB (installed)
+
+## Future Enhancements (Not Yet Implemented)
+
+- macOS/Linux support
+- Cloud backup integration
+- User profiles
+- Custom cleaning rules
+- Browser extension
+- Command-line interface
+- Auto-update mechanism
 
 ## Design Principles
-1. **Modular:** Each module has single responsibility
-2. **Safe:** All tests run in sandbox; no real user data access
-3. **Extensible:** CleanerML compatibility allows community cleaners
-4. **Transparent:** Rich logging for all operations
-5. **Graceful Degradation:** Fallbacks (CustomTkinter → tkinter, CleanerML → built-in)
 
+1. **User-First:** Simple, intuitive UI for non-technical users
+2. **Safety:** Backup-first approach, validation, error handling
+3. **Transparency:** Clear feedback, detailed logs
+4. **Modularity:** Separate concerns, testable components
+5. **Extensibility:** CleanerML compatibility, plugin-ready
+
+## References
+
+- [Flet Documentation](https://flet.dev/)
+- [BleachBit](https://www.bleachbit.org/)
+- [APScheduler](https://apscheduler.readthedocs.io/)
+- [Material Design 3](https://m3.material.io/)

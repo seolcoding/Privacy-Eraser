@@ -16,7 +16,6 @@
 
 ### 기타
 
-- **cursor.md** - Cursor IDE 설정 및 사용법
 - **mcp.json** - Model Context Protocol 설정
 - **rules** - AI 코딩 규칙
 

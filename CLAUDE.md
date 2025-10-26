@@ -363,29 +363,92 @@ uv run flet pack main.py --name "PrivacyEraser" --add-data "static/images;static
 
 **해결 방법**:
 
-1. **pyproject.toml 설정** (권장)
-   ```toml
-   [tool.flet]
-   exclude = [
-       "test_data",    # DEV 모드 테스트 데이터
-       ".git",         # Git 히스토리
-       ".venv",        # 가상환경
-       "references",   # BleachBit 참조 코드
-       ".claude",      # Claude Code 설정
-       ".coverage",    # 테스트 커버리지
-   ]
-   ```
+#### 1. pyproject.toml 설정 (권장)
 
-2. **명령줄 옵션**
-   ```bash
-   uv run flet build windows --exclude test_data .git .venv references
-   ```
+**앱 패키징 제외 설정** (app.zip에서 제외):
+```toml
+[tool.flet.app]
+exclude = [
+    ".venv/**/*",
+    "venv/**/*",
+    "__pycache__/**/*",
+    "*.pyc",
+    "*.pyo",
+    ".git/**/*",
+    "references/**/*",
+    ".claude/**/*",
+    "test_data/**/*",
+    "tests/**/*",
+    ".coverage",
+    ".pytest_cache/**/*",
+]
+```
 
-3. **예상 크기**
-   - 최적화 전: ~1.2GB
-   - 최적화 후: ~100-150MB
+**소스 패키징 제외 설정**:
+```toml
+[tool.flet]
+exclude = [
+    "test_data",
+    ".git",
+    ".venv",
+    "references",
+    ".claude",
+    ".coverage",
+]
+```
 
-**주의**: `test_data/` 폴더가 있으면 크기가 크게 증가합니다. 빌드 전에 삭제하거나 exclude 옵션을 사용하세요.
+#### 2. 빌드 스크립트 최적화
+
+`scripts/release_flutter.bat`에서 자동으로 다음을 수행:
+- src/.venv 존재 여부 확인 (있으면 빌드 실패)
+- 빌드 후 app.zip 크기 검증 (100MB 초과 시 경고)
+
+#### 3. 예상 크기
+
+- **최적화 전**: ~1.2GB (app.zip에 .venv 포함)
+- **최적화 후**: ~70-100MB
+  - Flutter 엔진: ~30MB
+  - libmpv-2.dll: ~28MB (미디어 지원, 제거 불가)
+  - Python 런타임: ~15MB
+  - 앱 코드 + 의존성: ~5-20MB
+
+#### 4. FAQ: .venv 제외해도 의존성이 포함되나요?
+
+**A: 네, 정상적으로 포함됩니다!**
+
+**작동 원리:**
+1. `flet build`는 `pyproject.toml`의 `[project.dependencies]`를 **직접 읽습니다**
+2. 필요한 패키지들을 **독립적으로 수집**하여 번들에 포함합니다
+3. `.venv`는 개발 환경일 뿐, 빌드 시에는 참조되지 않습니다
+
+**빌드 흐름:**
+```
+uv sync (개발 환경 의존성 설치)
+    ↓
+flet build windows (pyproject.toml 읽기)
+    ↓
+의존성 독립적으로 수집 (NOT from .venv)
+    ↓
+앱 번들에 포함
+```
+
+**`--exclude ".venv"`의 의미:**
+- **소스 코드** 패키징 시 `.venv` 폴더를 제외
+- 의존성 번들링과는 무관
+- 크기만 줄이고 기능은 동일
+
+#### 5. 빌드 검증 방법
+
+```bash
+# app.zip 크기 확인
+dir build\windows\data\flutter_assets\app.zip
+
+# app.zip 내용 확인
+tar -tzf build\windows\data\flutter_assets\app.zip | findstr ".venv"
+# (아무것도 출력되지 않으면 성공)
+```
+
+**주의**: `test_data/` 폴더가 src/에 있으면 크기가 크게 증가합니다. 빌드 전에 삭제하거나 exclude 옵션을 사용하세요.
 
 ---
 
