@@ -127,12 +127,11 @@
   <option id="sync">
     <label>Sync</label>
     <description>Delete the sync data and sign out of the browser</description>
+    <warning>This will delete your account info and sync settings. Browser settings will be reset to defaults.</warning>
     <action command="delete" search="walk.files" path="$$profile$$/Sync Data/"/>
-    <!-- Sync Data Backup not seen in Chromium 65 -->
-    <action command="json" search="file" path="$$base$$/Local State" address="profile"/>
-    <action command="json" search="file" path="$$profile$$/Preferences" address="account_info"/>
-    <action command="json" search="file" path="$$profile$$/Preferences" address="google_services"/>
-    <action command="json" search="file" path="$$profile$$/Preferences" address="sync"/>
+    <!-- Delete entire files instead of JSON keys (JSON command not implemented) -->
+    <action command="delete" search="file" path="$$base$$/Local State"/>
+    <action command="delete" search="file" path="$$profile$$/Preferences"/>
   </option>
   <option id="passwords">
     <label>Passwords</label>
