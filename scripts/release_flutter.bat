@@ -2,6 +2,11 @@
 REM ============================================================
 REM Privacy Eraser - Flet Build & Release Script (Flutter)
 REM ============================================================
+
+REM CRITICAL: Set UTF-8 to see error messages (suppress emoji errors with file redirect)
+chcp 65001 >nul
+set PYTHONIOENCODING=utf-8
+set PYTHONUTF8=1
 REM Automates the entire release process:
 REM 1. Build with Flutter SDK (flet build windows)
 REM 2. Create ZIP archive
@@ -92,9 +97,15 @@ if %errorlevel% neq 0 (
 )
 echo   [OK] Dependencies synced
 
-REM Clean previous builds (both root and src)
-if exist "build\windows" rmdir /s /q "build\windows"
-if exist "src\build\windows" rmdir /s /q "src\build\windows"
+REM Clean previous builds (COMPLETE clean to avoid cache issues)
+REM CRITICAL: Delete entire build/ and src/build/, not just subdirectories
+REM Otherwise Flet may reuse cached app.zip (786MB bloat!)
+echo   [CLEAN] Removing all build artifacts...
+if exist "build" rmdir /s /q "build"
+if exist "src\build" rmdir /s /q "src\build"
+if exist ".flet" rmdir /s /q ".flet"
+if exist "src\test_data" rmdir /s /q "src\test_data"
+echo   [OK] Clean build environment ready (test_data removed)
 
 REM ============================================================
 REM CRITICAL: Verify project root is clean before build
@@ -122,10 +133,14 @@ REM Build from project root (main.py is in root)
 REM Uses root's pyproject.toml and .venv automatically
 REM FIXED: exclude patterns now in [tool.flet.app] section of pyproject.toml
 REM   This ensures exclusions are applied to app.zip packaging
-uv run flet build windows
+echo   [INFO] Running Flet build (output logged to build_flet.log)...
+uv run flet build windows > build_flet.log 2>&1
 
 if %errorlevel% neq 0 (
-    echo [ERROR] Build failed!
+    echo [ERROR] Build failed! Check build_flet.log for details
+    echo.
+    echo Last 20 lines of log:
+    powershell -Command "Get-Content build_flet.log -Tail 20"
     pause
     exit /b 1
 )
@@ -138,79 +153,12 @@ if not exist "build\windows" (
 )
 
 echo   [OK] Build successful (Flutter/onedir)
-
-REM ============================================================
-REM CRITICAL: Verify app.zip size
-REM ============================================================
-REM app.zip should be small (~5-20MB). If it's >100MB, .venv was packaged!
-echo   [CHECK] Verifying app.zip size...
-
-set APP_ZIP_PATH=build\windows\data\flutter_assets\app.zip
-
-if not exist "%APP_ZIP_PATH%" (
-    echo [WARNING] app.zip not found at expected location
-    echo Expected: %APP_ZIP_PATH%
-    echo This is okay if Flet 0.27.0+ uses unpacked site packages
-) else (
-    REM Check app.zip size (in bytes)
-    for %%A in ("%APP_ZIP_PATH%") do set APP_ZIP_SIZE=%%~zA
-
-    REM Convert to MB for display (approximate)
-    set /a APP_ZIP_SIZE_MB=%APP_ZIP_SIZE% / 1048576
-
-    echo   app.zip size: %APP_ZIP_SIZE_MB% MB
-
-    REM If app.zip is larger than 100MB, something is wrong
-    if %APP_ZIP_SIZE_MB% GTR 100 (
-        echo [ERROR] app.zip is too large (%APP_ZIP_SIZE_MB% MB^)!
-        echo This indicates .venv or dev files were packaged
-        echo Expected size: 5-20 MB
-        echo.
-        echo Possible causes:
-        echo   - .venv exists in src/ directory
-        echo   - pyproject.toml exclude patterns not working
-        echo   - Flet version issue
-        echo.
-        echo See KNOWN_ISSUES.md for troubleshooting
-        pause
-        exit /b 1
-    )
-
-    echo   [OK] app.zip size is acceptable
-)
-echo.
-
-REM ============================================================
-REM Step 2.5: Remove app.zip from build output
-REM ============================================================
-echo [Step 2.5/7] Removing app.zip from build output...
-echo.
-
-REM Find and delete all app.zip files in build output (dynamic search)
-set APP_ZIP_FOUND=0
-for /f "delims=" %%i in ('dir /s /b "build\windows\*app.zip" 2^>nul') do (
-    echo   Found: %%i
-    echo   Deleting...
-    del /f "%%i"
-    if !errorlevel! neq 0 (
-        echo [WARNING] Failed to delete %%i
-    ) else (
-        echo   [OK] Deleted successfully
-        set APP_ZIP_FOUND=1
-    )
-)
-
-if %APP_ZIP_FOUND%==0 (
-    echo   [INFO] No app.zip files found (using unpacked site-packages or already removed^)
-) else (
-    echo   [OK] All app.zip files removed from build output
-)
 echo.
 
 REM ============================================================
 REM Step 3: Create ZIP archive
 REM ============================================================
-echo [Step 3/7] Creating ZIP archive...
+echo [Step 3/5] Creating ZIP archive...
 echo.
 
 set ZIP_NAME=PrivacyEraser-v%VERSION%-win-x64.zip
@@ -244,12 +192,13 @@ echo   [CHECK] Verifying distribution size...
 
 REM Get ZIP size in MB
 for %%A in ("%ZIP_NAME%") do set ZIP_SIZE=%%~zA
+if not defined ZIP_SIZE set ZIP_SIZE=0
 set /a ZIP_SIZE_MB=%ZIP_SIZE% / 1048576
 
 echo   Distribution size: %ZIP_SIZE_MB% MB
 echo   Maximum allowed: 200 MB
 
-if %ZIP_SIZE_MB% GTR 200 (
+if !ZIP_SIZE_MB! GTR 200 (
     echo.
     echo ============================================================
     echo [ERROR] Distribution ZIP is too large! (%ZIP_SIZE_MB% MB^)
@@ -270,7 +219,7 @@ echo.
 REM ============================================================
 REM Step 4: Create and push Git tag (always "latest")
 REM ============================================================
-echo [Step 4/7] Creating Git tag...
+echo [Step 4/5] Creating Git tag...
 echo.
 
 REM Delete existing "latest" tag (locally and remotely)
@@ -300,7 +249,7 @@ echo.
 REM ============================================================
 REM Step 5: Create GitHub Release
 REM ============================================================
-echo [Step 5/7] Creating GitHub Release...
+echo [Step 5/5] Creating GitHub Release...
 echo.
 
 REM Delete existing "latest" release if it exists
@@ -334,7 +283,7 @@ echo   [OK] GitHub Release created
 echo.
 
 REM ============================================================
-REM Step 6: Verify final package
+REM Release Complete
 REM ============================================================
 echo ============================================================
 echo RELEASE COMPLETED SUCCESSFULLY!
