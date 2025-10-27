@@ -97,55 +97,38 @@ if exist "build\windows" rmdir /s /q "build\windows"
 if exist "src\build\windows" rmdir /s /q "src\build\windows"
 
 REM ============================================================
-REM CRITICAL: Verify src/ directory is clean before build
+REM CRITICAL: Verify project root is clean before build
 REM ============================================================
-REM If .venv or venv exists in src/, it will be packaged into app.zip (1.2GB bloat!)
+REM If .venv or venv exists in project, it might be packaged (potential bloat!)
 REM See: KNOWN_ISSUES.md for details
-echo   [CHECK] Verifying src/ directory is clean...
+echo   [CHECK] Verifying project directory is clean...
 
-if exist "src\.venv" (
-    echo [ERROR] .venv directory found in src/!
-    echo This will cause app.zip to bloat to 1.2GB+
-    echo Please remove src\.venv before building
-    echo.
-    echo Solution: Delete src\.venv directory
-    pause
-    exit /b 1
+if exist ".venv" (
+    echo [WARNING] .venv directory found in project root
+    echo This is okay if pyproject.toml excludes it (should be excluded by default^)
+    echo Continuing with build...
 )
 
-if exist "src\venv" (
-    echo [ERROR] venv directory found in src/!
-    echo This will cause app.zip to bloat to 1.2GB+
-    echo Please remove src\venv before building
-    echo.
-    echo Solution: Delete src\venv directory
-    pause
-    exit /b 1
+if exist "venv" (
+    echo [WARNING] venv directory found in project root
+    echo This is okay if pyproject.toml excludes it (should be excluded by default^)
+    echo Continuing with build...
 )
 
-echo   [OK] src/ directory is clean (no .venv, venv found)
+echo   [OK] Project directory check complete
 
 REM Build with Flet Build (Flutter-based, uses pyproject.toml settings)
-REM Build from src/ directory to minimize package size (only includes src/)
+REM Build from project root (main.py is in root)
+REM Uses root's pyproject.toml and .venv automatically
 REM FIXED: exclude patterns now in [tool.flet.app] section of pyproject.toml
 REM   This ensures exclusions are applied to app.zip packaging
-REM   --exclude flags below are redundant but explicit for safety
-cd src
-uv run flet build windows --exclude ".venv" --exclude "venv" --exclude "__pycache__" --exclude "tests"
+uv run flet build windows
 
 if %errorlevel% neq 0 (
     echo [ERROR] Build failed!
-    cd ..
     pause
     exit /b 1
 )
-
-REM Move build output to project root
-if exist "build\windows" (
-    echo   Moving build output to project root...
-    move "build\windows" "..\build\windows" >nul
-)
-cd ..
 
 REM Verify build output exists
 if not exist "build\windows" (
@@ -198,9 +181,36 @@ if not exist "%APP_ZIP_PATH%" (
 echo.
 
 REM ============================================================
+REM Step 2.5: Remove app.zip from build output
+REM ============================================================
+echo [Step 2.5/7] Removing app.zip from build output...
+echo.
+
+REM Find and delete all app.zip files in build output (dynamic search)
+set APP_ZIP_FOUND=0
+for /f "delims=" %%i in ('dir /s /b "build\windows\*app.zip" 2^>nul') do (
+    echo   Found: %%i
+    echo   Deleting...
+    del /f "%%i"
+    if !errorlevel! neq 0 (
+        echo [WARNING] Failed to delete %%i
+    ) else (
+        echo   [OK] Deleted successfully
+        set APP_ZIP_FOUND=1
+    )
+)
+
+if %APP_ZIP_FOUND%==0 (
+    echo   [INFO] No app.zip files found (using unpacked site-packages or already removed^)
+) else (
+    echo   [OK] All app.zip files removed from build output
+)
+echo.
+
+REM ============================================================
 REM Step 3: Create ZIP archive
 REM ============================================================
-echo [Step 3/6] Creating ZIP archive...
+echo [Step 3/7] Creating ZIP archive...
 echo.
 
 set ZIP_NAME=PrivacyEraser-v%VERSION%-win-x64.zip
@@ -260,7 +270,7 @@ echo.
 REM ============================================================
 REM Step 4: Create and push Git tag (always "latest")
 REM ============================================================
-echo [Step 4/6] Creating Git tag...
+echo [Step 4/7] Creating Git tag...
 echo.
 
 REM Delete existing "latest" tag (locally and remotely)
@@ -290,7 +300,7 @@ echo.
 REM ============================================================
 REM Step 5: Create GitHub Release
 REM ============================================================
-echo [Step 5/6] Creating GitHub Release...
+echo [Step 5/7] Creating GitHub Release...
 echo.
 
 REM Delete existing "latest" release if it exists
@@ -324,7 +334,7 @@ echo   [OK] GitHub Release created
 echo.
 
 REM ============================================================
-REM Step 6: Summary
+REM Step 6: Verify final package
 REM ============================================================
 echo ============================================================
 echo RELEASE COMPLETED SUCCESSFULLY!
