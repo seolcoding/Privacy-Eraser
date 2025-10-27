@@ -40,6 +40,12 @@ uv.lock
 # Screenshots
 screenshots/
 *.png
+# But track static images in src
+!src/static/**/*.png
+!src/static/**/*.jpg
+!src/static/**/*.svg
+!src/static/**/*.webp
+!src/static/**/*.ico
 
 # Backups
 backups/
@@ -55,4 +61,6 @@ debug_*.py
 # Archive files
 *.zip
 
+# Ignore root test_data but track src/test_data
 test_data/**
+!src/test_data/**
