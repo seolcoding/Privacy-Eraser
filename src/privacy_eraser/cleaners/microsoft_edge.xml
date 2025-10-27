@@ -56,6 +56,10 @@
     <action command="delete" search="file" path="$$profile$$/Cookies-journal"/>
     <action command="delete" search="file" path="$$profile$$/Extension Cookies"/>
     <action command="delete" search="file" path="$$profile$$/Extension Cookies-journal"/>
+    <action command="delete" search="file" path="$$profile$$/Network/Cookies"/>
+    <action command="delete" search="file" path="$$profile$$/Network/Cookies-journal"/>
+    <action command="delete" search="walk.all" path="$$profile$$/IndexedDB/"/>
+    <action command="delete" search="walk.all" path="$$profile$$/Pepper Data/Shockwave Flash/WritableRoot/"/>
   </option>
   <option id="dom">
     <label>DOM Storage</label>
@@ -113,8 +117,12 @@
   <option id="session">
     <label>Session</label>
     <description>Delete the current and last sessions</description>
-    <action command="delete" search="walk.all" path="$$profile$$/Session"/>
+    <action command="delete" search="file" path="$$profile$$/Current Session"/>
+    <action command="delete" search="file" path="$$profile$$/Current Tabs"/>
+    <action command="delete" search="file" path="$$profile$$/Last Session"/>
+    <action command="delete" search="file" path="$$profile$$/Last Tabs"/>
     <action command="delete" search="walk.all" path="$$profile$$/Extension State"/>
+    <action command="delete" search="walk.all" path="$$profile$$/Sessions"/>
   </option>
   <option id="sync">
     <label>Sync</label>
