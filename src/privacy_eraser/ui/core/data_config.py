@@ -87,7 +87,7 @@ BROWSER_COLORS = {
 
 BROWSER_PROCESSES = {
     "chrome": ["chrome.exe", "chromium.exe"],
-    "edge": ["msedge.exe"],
+    "edge": ["msedge.exe", "MicrosoftEdgeUpdate.exe", "msedgewebview2.exe", "identity_helper.exe", "elevation_service.exe"],
     "firefox": ["firefox.exe"],
     "brave": ["brave.exe"],
     "opera": ["opera.exe"],

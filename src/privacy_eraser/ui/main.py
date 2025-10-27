@@ -132,21 +132,37 @@ def kill_browser_processes(browsers: list[str]) -> tuple[int, list[str]]:
         process_names = BROWSER_PROCESSES[browser_lower]
         browser_killed = False
 
+        # Edge needs force kill due to background processes
+        use_force = (browser_lower == "edge")
+
         for process_name in process_names:
             try:
-                # Try graceful shutdown first (without /F flag)
-                result = subprocess.run(
-                    ['taskkill', '/IM', process_name],
-                    capture_output=True,
-                    text=True,
-                    creationflags=subprocess.CREATE_NO_WINDOW,
-                    timeout=5
-                )
+                if use_force:
+                    # Force kill Edge immediately (too many background processes)
+                    logger.info(f"Force killing {process_name}...")
+                    result = subprocess.run(
+                        ['taskkill', '/F', '/IM', process_name],
+                        capture_output=True,
+                        text=True,
+                        creationflags=subprocess.CREATE_NO_WINDOW
+                    )
+                    if result.returncode == 0:
+                        browser_killed = True
+                        killed_count += 1
+                else:
+                    # Try graceful shutdown first for other browsers
+                    result = subprocess.run(
+                        ['taskkill', '/IM', process_name],
+                        capture_output=True,
+                        text=True,
+                        creationflags=subprocess.CREATE_NO_WINDOW,
+                        timeout=5
+                    )
 
-                if result.returncode == 0:
-                    logger.info(f"Gracefully terminated browser process: {process_name}")
-                    browser_killed = True
-                    killed_count += 1
+                    if result.returncode == 0:
+                        logger.info(f"Gracefully terminated browser process: {process_name}")
+                        browser_killed = True
+                        killed_count += 1
             except subprocess.TimeoutExpired:
                 # If graceful shutdown times out, force kill
                 try:
@@ -167,6 +183,13 @@ def kill_browser_processes(browsers: list[str]) -> tuple[int, list[str]]:
 
         if not browser_killed:
             failed.append(browser)
+
+    # Wait for file handles to be released after process termination
+    # Edge needs longer wait time due to multiple background processes
+    if killed_count > 0:
+        wait_time = 5 if any(b.lower() == "edge" for b in browsers) else 2
+        logger.info(f"Waiting {wait_time} seconds for file handles to be released...")
+        time.sleep(wait_time)
 
     return killed_count, failed
 
